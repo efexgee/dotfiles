@@ -1,0 +1,1 @@
+alias qbad='qstat -f | awk "{if (NF > 5) print}"'
