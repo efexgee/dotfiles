@@ -134,6 +134,10 @@ if [ -x /usr/bin/dircolors ]; then
 fi
 
 #FXG Aliases
+if [ -f .alias ]; then
+	source .alias
+fi
+
 alias h='history'
 
 #FXG: Set color for grep output
