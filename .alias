@@ -1,1 +1,32 @@
+#
+# UGE Cluster
+#
+
 alias qbad='qstat -f | awk "{if (NF > 5) print}"'
+alias qslots='qstat -g c'
+alias qerr='qstat -qs E -f -explain E | awk "/^---*$/ { print \"\"; next} /^queuename/ { print \"\$1, \$6, error job node\"; next } /^[^ ]*@/ { node_info=\"$1 - $6\"; next } { print node_info $0 }" | sed "s/\.ihme\.wash.[^ ]*//g; s/\t*queue [^ ]* marked / - /; s/ as result of / - /; s/.s failure at host / - on /"'
+alias qqlogins='qstat -u \* | egrep "(QLOGIN|qlogins@)" | sort -k4 | awk "{ if (\$9 >= 10 && \$5 == \"r\") printf \"%d %-8s %10s %8s %s %d\n\", \$1, \$4, \$6, \$7, \$8, \$9, \$NF}"'
+alias qexplain='for state in E a; do qstat -f -qs $state -explain $state; done'
+alias qhjobs='qhost -j -h'
+
+#
+# Qumulo Aliases
+# 
+
+#run qq against one of the clusters
+alias qqbl="qq --host blah-fs"
+alias qqbo="qq --host boom-fs"
+alias qqf="qq --host fast-fs"
+alias qqd="qq --host dengue-fs"
+
+#login to a cluster
+alias qqlbl="qql blah"
+alias qqlbo="qql fast"
+alias qqlf="qql fast"
+alias qqld="qql dengue"
+
+#
+# General
+#
+
+alias fill='cut -c1-`tput cols`'

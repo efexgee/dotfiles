@@ -1,0 +1,63 @@
+#print a slice of a file, N lines long starting at line M
+buckets () {
+	# $1 : rsync command line file
+	# $2 : starting line (starting bucket number)
+	# $3 : number of lines (number of buckets)
+
+	if (( $# != 3 )); then
+		echo "Usage: $0 <rsync commands file > <start bucket id> <number of buckets>"
+		return 1
+	elif [ ! -f $1 ]; then
+		echo "File not found: $1"
+		return 2
+	fi
+
+	file=$1
+	start=$2
+	number=$3
+
+	tail -n +${start} $file | head -${number}
+}
+
+#print summary of all rsyncs' status
+rsync_report () {
+	output=`for log_file in \`ls -1 *log\`; do
+		tail=\`tail -1 $log_file\`
+		lines=\`wc -l $log_file | cut -d\  -f1\`
+		label=${log_file/.log/}
+		printf "%s %8d : $tail\n" $label $lines
+		done`
+	echo "$output" | egrep -v "(] sent |rsync error)" | cut -c1-`tput cols`
+	finished=`echo "$output" | grep -c sent`
+	building=`echo "$output" | grep -c "building file list"`
+	error=`echo "$output" | grep -c "rsync error"`
+	echo
+	other=$(( `echo "$output" | wc -l` - $finished - $building - $error ))
+	printf "Building: %3d\nError: %6d\nOther: %6d\nComplete: %3d\n" $building $error $other $finished
+}
+
+#print percent complete on boom migration
+boom_mig_progress () {
+	df /qumulo/boom-fs/node_06/forecasting/ /qumulo/dengue-fs/node_06/forecasting/ --output=target,used |
+	awk '/boom-fs/ { boom = $NF } /dengue-fs/ { dengue = $NF } END { printf "%3.1f%% complete\n", dengue / boom * 100 }'
+}
+
+#log into a Qumulo cluster
+qql () {
+	local API_PASSWORD="qapi"
+
+	local cluster="${1}-fs"
+	local user="${cluster}-api"
+	local qq_c="--host $cluster"
+
+	qq $qq_c login -u $user -p $API_PASSWORD > /dev/null
+
+	if [ $? -eq 0 ]; then
+		host=`qq $qq_c cluster_conf | jq -r '.cluster_name'`
+		login=`qq $qq_c who_am_i | jq -r '.name' 2> /dev/null`
+
+		echo "${login} @ ${host}"
+	else
+		echo "Couldn't log into $cluster [Exit code: $?]"
+	fi
+}
