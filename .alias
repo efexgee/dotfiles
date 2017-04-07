@@ -30,3 +30,4 @@ alias qqld="qql dengue"
 #
 
 alias fill='cut -c1-`tput cols`'
+alias fun='typeset -f'
