@@ -21,16 +21,21 @@ buckets () {
 
 #print summary of all rsyncs' status
 rsync_report () {
-	output=`for log_file in \`ls -1 *log\`; do
+	finished=0
+	output=`for log_file in \`ls -1 *[0-9].log\`; do
 		tail=\`tail -1 $log_file\`
-		lines=\`wc -l $log_file | cut -d\  -f1\`
+		if ! echo $tail | grep sent > /dev/null; then
+			lines=\`wc -l $log_file | cut -d\  -f1\`
+		else
+			lines="?"
+		fi
 		label=${log_file/.log/}
-		printf "%s %8d : $tail\n" $label $lines
+		printf "%s %8s : $tail\n" $label $lines
 		done`
-	echo "$output" | egrep -v "(] sent |rsync error)" | cut -c1-`tput cols`
-	finished=`echo "$output" | grep -c sent`
+	echo "$output" | egrep -v "(] sent |rsync error)" | fill
 	building=`echo "$output" | grep -c "building file list"`
 	error=`echo "$output" | grep -c "rsync error"`
+	finished=`echo "$output" | grep -c "] sent"`
 	echo
 	other=$(( `echo "$output" | wc -l` - $finished - $building - $error ))
 	printf "Building: %3d\nError: %6d\nOther: %6d\nComplete: %3d\n" $building $error $other $finished

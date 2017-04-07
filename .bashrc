@@ -138,6 +138,11 @@ if [ -f .alias ]; then
 	source .alias
 fi
 
+#FXG Aliases
+if [ -f .function ]; then
+	source .function
+fi
+
 alias h='history'
 
 #FXG: Set color for grep output
