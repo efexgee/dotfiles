@@ -115,6 +115,11 @@ function qq_sizes () {
 
 #shove an existing git repo into my personal GitHub account
 function githubbify () {
+	#requires:
+	#	user definition in .ssh/config
+	#	ssh key in .ssh
+	#	an API token for GitHub
+	#	the token defined as a git variable called github.token
 	if (( $# != 2 )); then
 		echo "Usage: $0 <repo name> <repo description>"
 		return
