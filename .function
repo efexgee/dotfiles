@@ -96,14 +96,30 @@ function qq_size () {
 
 #get size and file count of a directory via Qumulo API
 function qq_sizes () {
+	local func_name=${FUNCNAME[0]}
+
 	if (( $# != 1 )); then
-		echo "Usage: ${FUNCNAME[0]} <full Qumulo path>"
+		echo "Usage: $func_name <full Qumulo path>"
 		return 1
 	fi
 
-	if ! echo $1 | grep -q '^/'; then
-		echo "${FUNCNAME[0]}: path needs to start with a slash"
+	if ! $(echo $1 | grep -q '^/'); then
+		echo "$func_name: path needs to start with a slash"
 		return 2
+	fi 
+
+	local qq_output=`qqb who_am_i`
+
+	if $(echo $qq_output | grep -q Error); then
+		echo "$func_name: Error talking to Qumulo. Is there an established session?"
+		return 3
+	fi
+
+	local qq_login=`echo $qq_output | jq -r '.name' 2> /dev/null`
+
+	if ! [ "$qq_login" = "admin" ]; then
+		echo "$func_name: Warning: Not logged in as admin (login = $qq_login). Some paths won't be accessible."
+		echo
 	fi
 
 	qqb fs_read_dir_aggregates --path $1 |
