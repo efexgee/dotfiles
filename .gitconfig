@@ -1,3 +1,9 @@
 [user]
-	name = efexgee
-	email = mr.falko@gmail.com
+	email = falko@uw.edu
+	name = Falko Goettsch
+[push]
+	default = simple
+[core]
+	editor = vim
+[github]
+	token = 88f470e75ad182c15a390863968f3b31bd8a372c

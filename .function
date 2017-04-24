@@ -112,3 +112,30 @@ function qq_sizes () {
 	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $1 / 1024^3, $2 + $3, $4}'
 
 }
+
+#shove an existing git repo into my personal GitHub account
+function githubbify () {
+	if (( $# != 2 )); then
+		echo "Usage: $0 <repo name> <repo description>"
+		return
+	fi
+
+	local user=efexgee
+	#github.token is not a standard git field, I think
+	local gh_token=`git config github.token`
+
+	local name=$1
+	local descr=$2
+
+	local remote="gh.$name"
+
+	local curl_data='{"name":"'$name'","description":"'$descr'"}'
+
+
+	curl -u $user:$gh_token https://api.github.com/user/repos -d "$curl_data"
+
+	git remote add $remote ssh://github.com/$user/$name
+
+	git push --set-upstream $remote master
+}
+
