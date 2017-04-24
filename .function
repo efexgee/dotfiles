@@ -66,3 +66,49 @@ qql () {
 		echo "Couldn't log into $cluster [Exit code: $?]"
 	fi
 }
+
+#show idle logins
+#find all job IDs in the qlogins@ queue and find ones that are not using any memory
+#TODO add CPU time
+qidle () {
+	for job in `qstat -u \* | grep 'qlogins@' | awk '{ print $1 }'`; do
+		qstat -j $job
+	done | awk '/^job_number/ { job=$NF; slots=1} /^owner/ { user=$NF } /^parallel environment/ { slots=$NF } /^exec_host_list/ { FS="," } /^usage/ { if ( $3 == " mem=0.00000 GBs") { printf "%-10d %3d %-8s %-10s %-15s\n", job, slots, user, $2, $5} FS=" "}'
+}
+
+#get size and file count of a directory via Qumulo API
+function qq_size () {
+	if (( $# != 1 )); then
+		echo "Usage: ${FUNCNAME[0]} <full Qumulo path>"
+		return 1
+	fi
+
+	if ! echo $1 | grep -q '^/'; then
+		echo "${FUNCNAME[0]}: path needs to start with a slash"
+		return 2
+	fi
+
+	qqb fs_read_dir_aggregates --path $1 |
+	jq -r '[(.total_capacity | tonumber), (.total_files | tonumber), (.total_directories | tonumber), (.path | split("/"))[-2]] | @csv' |
+	tr -d '"' |
+	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $1 / 1024^3, $2 + $3, $4}'
+}
+
+#get size and file count of a directory via Qumulo API
+function qq_sizes () {
+	if (( $# != 1 )); then
+		echo "Usage: ${FUNCNAME[0]} <full Qumulo path>"
+		return 1
+	fi
+
+	if ! echo $1 | grep -q '^/'; then
+		echo "${FUNCNAME[0]}: path needs to start with a slash"
+		return 2
+	fi
+
+	qqb fs_read_dir_aggregates --path $1 |
+	jq -r '.files[] | [(.capacity_usage | tonumber), (.num_files | tonumber), (.num_directories | tonumber), .name] | @csv' |
+	tr -d '"' |
+	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $1 / 1024^3, $2 + $3, $4}'
+
+}
