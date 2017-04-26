@@ -32,6 +32,5 @@ alias qqlc="qql chagas"
 alias fill='cut -c1-`tput cols`'
 alias fun='typeset -f'
 
+#create a tombstoning directory for staged deletions
 alias tombstone='sudo mkdir TO_BE_DELETED && sudo chgrp IHME-SA TO_BE_DELETED && sudo touch TO_BE_DELETED/timestamp.`date +"%s"`'
-
-alias rsync_ps='ps h -C rsync k -s,-etime -o s,etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | egrep "(^[RT]|$)"'

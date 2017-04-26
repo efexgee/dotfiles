@@ -98,17 +98,64 @@ function qq_size () {
 function qq_sizes () {
 	local func_name=${FUNCNAME[0]}
 
-	if (( $# != 1 )); then
-		echo "Usage: $func_name <full Qumulo path>"
+	if (( $# != 2 )); then
+		echo "Usage: $func_name <Qumulo cluster> <full Qumulo path>"
 		return 1
 	fi
 
-	if ! $(echo $1 | grep -q '^/'); then
+	local cluster=$1
+	local path=$2
+	local token_file=~/.qfsd_cred.${cluster}
+
+	if ! [ -f $token_file ]; then
+		echo "$func_name: token file doesn't seem to exist: $token_file"
+		return 4
+	fi
+
+	if ! $(echo $path | grep -q '^/'); then
 		echo "$func_name: path needs to start with a slash"
 		return 2
 	fi 
 
-	local qq_output=`qqb who_am_i`
+	local qq_output=`qq --host $cluster --credentials-store $token_file who_am_i`
+
+	if $(echo $qq_output | grep -q Error); then
+		echo "$func_name: Error talking to $cluster. Is there an established session?"
+		return 3
+	fi
+
+	local qq_login=`echo $qq_output | jq -r '.name' 2> /dev/null`
+
+	if ! [ "$qq_login" = "admin" ]; then
+		echo "$func_name: Warning: Not logged in as admin (login = $qq_login). Some paths won't be accessible."
+		echo
+	fi
+
+	qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --path $path |
+	jq -r '.files[] | [(.capacity_usage | tonumber), (.num_files | tonumber), (.num_directories | tonumber), .name] | @csv' |
+	tr -d '"' |
+	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $path / 1024^3, $2 + $3, $4}'
+
+}
+#do the same thing but make CSVs
+function qq_sizes_csv () {
+	local func_name=${FUNCNAME[0]}
+
+	if (( $# != 2 )); then
+		echo "Usage: $func_name <Qumulo cluster> <full Qumulo path>"
+		return 1
+	fi
+
+	local cluster=$1
+	local path=$2
+	local token_file=~/.qfsd_cred.${cluster}
+
+	if ! $(echo $path | grep -q '^/'); then
+		echo "$func_name: path needs to start with a slash"
+		return 2
+	fi 
+
+	local qq_output=`qq --host $cluster --credentials-store $token_file who_am_i`
 
 	if $(echo $qq_output | grep -q Error); then
 		echo "$func_name: Error talking to Qumulo. Is there an established session?"
@@ -122,13 +169,9 @@ function qq_sizes () {
 		echo
 	fi
 
-	qqb fs_read_dir_aggregates --path $1 |
-	jq -r '.files[] | [(.capacity_usage | tonumber), (.num_files | tonumber), (.num_directories | tonumber), .name] | @csv' |
-	tr -d '"' |
-	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $1 / 1024^3, $2 + $3, $4}'
-
+	qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --path $path |
+	jq -r '.files[] | [(.capacity_usage | tonumber) / 1024 / 1024 / 1024, (.num_files | tonumber) + (.num_directories | tonumber), .name] | @csv'
 }
-
 #shove an existing git repo into my personal GitHub account
 function githubbify () {
 	#requires:
@@ -160,3 +203,11 @@ function githubbify () {
 	git push --set-upstream $remote master
 }
 
+#list all running rsyncs, deriving a label from the logfile name
+function rsync_ps () {
+	if [ "$1" = "-u" ]; then
+		ps h -C rsync k -etime -o etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k4 | uniq -s 47
+	else
+		ps h -C rsync k -s,-etime -o s,etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k5 | egrep "(^[RT]|$)"
+	fi
+}
