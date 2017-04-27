@@ -196,11 +196,15 @@ function githubbify () {
 	local curl_data='{"name":"'$name'","description":"'$descr'"}'
 
 
-	curl -u $user:$gh_token https://api.github.com/user/repos -d "$curl_data"
+	echo "Creating new repo ($remote) on GitHub..."
+	curl -u $user:$gh_token https://api.github.com/user/repos -d "$curl_data" || return 1
 
-	git remote add $remote ssh://github.com/$user/$name
+	echo "Adding GitHub repo as a remote..."
+	git remote add $remote ssh://github.com/$user/$name || return 2
 
-	git push --set-upstream $remote master
+	echo "Pushing local Git repo to GitHub repo..."
+	git push --set-upstream $remote master || return 3
+	echo "Done."
 }
 
 #list all running rsyncs, deriving a label from the logfile name
@@ -210,4 +214,30 @@ function rsync_ps () {
 	else
 		ps h -C rsync k -s,-etime -o s,etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k5 | egrep "(^[RT]|$)"
 	fi
+}
+
+#list all running rm's
+function rm_ps () {
+	if [ "$1" = "-u" ]; then
+		ps h -C rm k -etime -o etime,tty,wchan:23,args | sort -k4 | uniq -s 47
+	else
+		ps h -C rm k -s,-etime -o s,etime,tty,wchan:23,args | sort -k5 | egrep "(^[RT]|$)"
+	fi
+}
+
+#condense rsync log
+function rsync_log () {
+        local func_name=${FUNCNAME[0]}
+
+	if (( $# != 1 )); then
+		echo "Usage: $func_name <rsync log file>"
+		return 1
+	fi
+
+	local log_file=$1
+
+	(head -1 $log_file
+	egrep '(Number of files transferred|Total transferred file size)' $log_file
+	tail -1 $log_file) |
+	sed 's/\[[^]]*\] //; s/Number of files transferred:/Files /; s/Total transferred file size:/Size  /'
 }
