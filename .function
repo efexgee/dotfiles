@@ -5,7 +5,7 @@ buckets () {
 	# $3 : number of lines (number of buckets)
 
 	if (( $# != 3 )); then
-		echo "Usage: $0 <rsync commands file > <start bucket id> <number of buckets>"
+		echo "Usage: $0 <rsync commands file> <number of buckets> <start bucket id>"
 		return 1
 	elif [ ! -f $1 ]; then
 		echo "File not found: $1"
@@ -13,10 +13,13 @@ buckets () {
 	fi
 
 	file=$1
-	start=$2
-	number=$3
+	number=$2
+	start=$3
 
 	tail -n +${start} $file | head -${number}
+
+	echo
+	echo "Printed $1: lines $start - $(($start + $number - 1))"
 }
 
 #print summary of all rsyncs' status
@@ -67,6 +70,26 @@ qql () {
 	fi
 }
 
+#log into a Qumulo cluster as admin
+qqla () {
+
+	local cluster="${1}-fs"
+	local user="admin"
+	local qq_c="--host $cluster"
+	local qq_cred="--credentials-store $HOME/.qfsd_cred.$cluster"
+
+	echo -n "$cluster Admin "
+	qq $qq_cred $qq_c login -u $user > /dev/null
+
+	if [ $? -eq 0 ]; then
+		host=`qq $qq_cred $qq_c cluster_conf | jq -r '.cluster_name'`
+		login=`qq $qq_cred $qq_c who_am_i | jq -r '.name' 2> /dev/null`
+		echo "${login} @ ${host}"
+	else
+		echo "Couldn't log into $cluster [Exit code: $?]"
+	fi
+}
+
 #show idle logins
 #find all job IDs in the qlogins@ queue and find ones that are not using any memory
 #TODO add CPU time
@@ -97,14 +120,27 @@ function qq_size () {
 #get size and file count of a directory via Qumulo API
 function qq_sizes () {
 	local func_name=${FUNCNAME[0]}
+	local max_entries=5000
 
-	if (( $# != 2 )); then
-		echo "Usage: $func_name <Qumulo cluster> <full Qumulo path>"
+	if (( $# > 2 )); then
+		echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
 		return 1
 	fi
 
-	local cluster=$1
-	local path=$2
+	if (( $# == 1 )); then
+		echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
+		echo "Error: Either specify both cluster and path, or neither to use current location"
+		return 5
+	fi
+
+	if (( $# == 2 )); then
+		local cluster=$1
+		local path=$2
+	else
+		local cluster=`host \`df --output=source . | tail -1 | cut -d\: -f1\` | awk -F'[ .]' '{print $10}'`
+		local path=`pwd | sed "s#\`dirname \\\`df --output=target . | tail -1\\\`\`##"`
+	fi
+
 	local token_file=~/.qfsd_cred.${cluster}
 
 	if ! [ -f $token_file ]; then
@@ -131,7 +167,7 @@ function qq_sizes () {
 		echo
 	fi
 
-	qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --path $path |
+	qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --max-entries $max_entries --path $path |
 	jq -r '.files[] | [(.capacity_usage | tonumber), (.num_files | tonumber), (.num_directories | tonumber), .name] | @csv' |
 	tr -d '"' |
 	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $path / 1024^3, $2 + $3, $4}'
@@ -237,7 +273,40 @@ function rsync_log () {
 	local log_file=$1
 
 	(head -1 $log_file
-	egrep '(Number of files transferred|Total transferred file size)' $log_file
+	tail -100 $log_file | egrep '(Number of files transferred|Total transferred file size)'
 	tail -1 $log_file) |
 	sed 's/\[[^]]*\] //; s/Number of files transferred:/Files /; s/Total transferred file size:/Size  /'
+}
+
+#rename qsplit buckets
+function fix_buckets () {
+	local func_name=${FUNCNAME[0]}
+
+	if (( $# != 1 )); then
+		echo "Usage: $func_name <new bucket prefix>"
+		return 1
+	fi
+	
+
+	if [ -f qsync_*.txt ]; then 
+		echo "Usage: $func_name <new bucket prefix> (must be run in a directory with qsplit buckets)"
+		echo "Error: No bucket files found"
+		return 1
+	fi
+	
+	local bucket
+
+	for bucket in `ls qsync*bucket*.txt`; do
+		local bucket_id=`echo $bucket | sed "s/qsync_[0-9]*_bucket\([0-9]*\).txt/\1/"`
+		bucket_id=`printf "%02d" $bucket_id`
+		mv -v $bucket ${1}_bucket$bucket_id
+	done
+
+	echo "Updating bucket timestamps"
+
+	# timestamp the buckets to match order
+	for bucket in `ls ${1}_bucket*`; do
+		touch $bucket
+		sleep 0.01
+	done
 }
