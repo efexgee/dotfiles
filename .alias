@@ -24,6 +24,10 @@ alias qqlb="qql blah"
 alias qqlf="qql fast"
 alias qqld="qql dengue"
 alias qqlc="qql chagas"
+alias qqab="qqla blah"
+alias qqaf="qqla fast"
+alias qqad="qqla dengue"
+alias qqac="qqla chagas"
 
 #
 # General
