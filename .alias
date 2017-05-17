@@ -9,6 +9,9 @@ alias qqlogins='qstat -u \* | egrep "(QLOGIN|qlogins@)" | sort -k4 | awk "{ if (
 alias qexplain='for state in E a; do qstat -f -qs $state -explain $state; done'
 alias qhjobs='qhost -j -h'
 
+#redirect qconf help to STDOUT and grep for the arg
+alias qwhat='qconf -help 2>&1 | grep'
+
 #
 # Qumulo Aliases
 # 

@@ -310,3 +310,23 @@ function fix_buckets () {
 		sleep 0.01
 	done
 }
+
+#check if a cluster node is configured
+function check_node () {
+	local node=$1
+
+	local QUEUE="all.q"
+	local HOST_GROUP="@allhosts"
+
+	local admin=`qconf -sh | grep $node`
+	local exec=`qconf -sel | grep $node`
+	local submit=`qconf -ss | grep $node`
+	local host_grp=`qconf -shgrp $HOST_GROUP | grep $node | sed 's/^ *//'`
+	local queue=`qconf -sq $QUEUE | grep $node`
+
+	printf "%-12s: %s\n" "admin host" $admin
+	printf "%-12s: %s\n" "exec host" $exec
+	printf "%-12s: %s\n" "submit host" $submit
+	printf "%-12s: %s\n" "host group" "$host_grp"
+	printf "%-12s: %s\n" "queue" $queue
+}
