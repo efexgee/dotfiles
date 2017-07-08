@@ -32,13 +32,20 @@ alias qqaf="qqla fast"
 alias qqad="qqla dengue"
 alias qqac="qqla chagas"
 
+#qsplit
+alias bfsplit='qfsplit --host blah-fs --credentials-store ~/.qfsd_cred.blah-fs'
+
 #
 # General
 #
 
 alias fill='cut -c1-`tput cols`'
 alias fun='typeset -f'
+alias tail1='tail -q -n 1'
 
 #create a tombstoning directory for staged deletions
 alias tombstone='sudo mkdir TO_BE_DELETED && sudo chgrp IHME-SA TO_BE_DELETED && sudo touch TO_BE_DELETED/timestamp.`date +"%s"`'
 
+# Conda
+alias py2='source activate py2'
+alias deconda='source deactivate'
