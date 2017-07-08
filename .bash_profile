@@ -7,6 +7,6 @@ fi
 
 # User specific environment and startup programs
 
-PATH=$HOME/bin:$PATH
+PATH=$HOME/bin:$HOME/miniconda2/bin:$PATH
 
 export PATH
