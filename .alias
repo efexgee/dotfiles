@@ -8,6 +8,9 @@ alias qerr='qstat -qs E -f -explain E | awk "/^---*$/ { print \"\"; next} /^queu
 alias qqlogins='qstat -u \* | egrep "(QLOGIN|qlogins@)" | sort -k4 | awk "{ if (\$9 >= 10 && \$5 == \"r\") printf \"%d %-8s %10s %8s %s %d\n\", \$1, \$4, \$6, \$7, \$8, \$9, \$NF}"'
 alias qexplain='for state in E a; do qstat -f -qs $state -explain $state; done'
 alias qhjobs='qhost -j -h'
+alias qhjobs_here='qhost -j -h `hostname -s`'
+
+alias chex='df | egrep -w "(cod|codem|hospital|mortality)" | tr ":" " "; sudo automount -m | egrep -w "(cod|codem|hospital|mortality)" | grep -v chagas'
 
 #redirect qconf help to STDOUT and grep for the arg
 alias qwhat='qconf -help 2>&1 | grep'
