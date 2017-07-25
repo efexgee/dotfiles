@@ -387,3 +387,81 @@ function check_node () {
 	printf "%-12s: %s\n" "host group" "$host_grp"
 	printf "%-12s: %s\n" "queue" $queue
 }
+
+#compare qq_sizes on two different Qumulos
+function qq_comp () {
+    local path=$1;
+    local left=blah-fs;
+    local right=chagas-fs;
+
+    echo $left;
+    qq_sizes $left $path;
+
+    echo $right;
+    qq_sizes $right $path;
+}
+
+#list all snapshots and their sizes
+function qq_snaps () {
+	local func_name=${FUNCNAME[0]}
+
+	if (( $# != 1 )); then
+		echo "Usage: $func_name <qumulo cluster name>"
+		return 1
+	fi
+
+    local cluster=$1
+
+    for snap in `(echo Total; qq --credentials-store ~/.qfsd_cred.${cluster} --host $cluster snapshot_list_snapshots | jq -r '.entries[] | .id')`; do
+        if [ "$snap" == "Total" ]; then
+            size=`qq --credentials-store ~/.qfsd_cred.${cluster} --host $cluster snapshot_get_total_used_capacity | jq -r '.bytes'`
+        else
+            size=`qq --credentials-store ~/.qfsd_cred.${cluster} --host $cluster snapshot_calculate_used_capacity --id $snap | jq -r '.bytes'`
+        fi
+
+        echo "$snap $size"
+    done | awk '{printf "%5s %'\''10.1f Gb\n", $1, $2 / 1024 ^ 3}'
+}
+
+#search UGE project-related configurations
+function qproj_probe () {
+    # This only greps for a substring. It does not look up RQS and UL
+    # based on the project configuration
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <string>"
+        return 1
+    fi
+
+    local sub_string=$1
+
+    echo "Projects matching '$sub_string'"
+    echo "---------------------------------------------------"
+    # list matching projects
+    for proj in `qconf -sprjl | grep -i $sub_string`; do
+        qconf -sprj $proj
+        echo
+    done |
+    # grep out "default" values to shorten output
+    egrep -v '((fshare|oticket) *0$|xacl *NONE$)'
+
+    echo "User Lists matching '$sub_string'"
+    echo "---------------------------------------------------"
+    # list matching user lists
+    for user_list in `qconf -sul | grep -i $sub_string`; do
+        qconf -su $user_list
+        echo
+    done |
+    egrep -v '((fshare|oticket) *0$|xacl *NONE$|type *ACL$)'
+
+    echo "Resource Quota Sets matching '$sub_string'"
+    echo "---------------------------------------------------"
+    # list matching resource quota sets
+    for resource_quota in `qconf -srqsl | grep -i $sub_string`; do
+        qconf -srqs $resource_quota
+        echo
+    done |
+    egrep -v '(enabled *TRUE$|{|})' |
+    sed 's/^ *//'
+}
