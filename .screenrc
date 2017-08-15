@@ -1,0 +1,2 @@
+# source env in new screen windows
+shell -$SHELL
