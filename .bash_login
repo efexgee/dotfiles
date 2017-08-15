@@ -1,0 +1,5 @@
+if [ -f /etc/redhat-release ]; then
+    cat /etc/redhat-release
+fi
+uname -a
+uptime | sed 's/^ *//'

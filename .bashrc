@@ -15,8 +15,9 @@ fi
 
 # for qumulo-dashboard-p01
 # add the paths under root homedir
-if [ -f .qumulo-paths ]; then
-    . .qumulo-paths
+if [ -f $HOME/.qumulo-paths ]; then
+    echo Found $HOME/.qumulo-paths
+    . $HOME/.qumulo-paths
 fi
 
 # Use bash-completion, if available
@@ -68,12 +69,12 @@ force_color_prompt=yes
 
 if [ -n "$force_color_prompt" ]; then
     if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-	# We have color support; assume it's compliant with Ecma-48
-	# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
-	# a case would tend to support setf rather than setaf.)
-	color_prompt=yes
+   # We have color support; assume it's compliant with Ecma-48
+   # (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+   # a case would tend to support setf rather than setaf.)
+   color_prompt=yes
     else
-	color_prompt=
+   color_prompt=
     fi
 fi
 
@@ -101,13 +102,13 @@ fi
 #FXG check to see if we're root
 
 if [ "$color_prompt" = yes ]; then
-	if [ $(id -u) == 0 ]; then
-		#"root" prompt colors username red and replaces $ with a red #
-		PS1='\[\e]0;\w\a\]\n\[\e[91m\]\u\[\e[32m\]@\h:\[\e[33m\]\w\[\e[91m\]#\[\e[0m\] '
-		echo "Remember: \"With root power comes root responsibility.\""
-	else
-		PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h:\[\e[33m\]\w\[\e[0m\]\$ '
-	fi
+   if [ $(id -u) == 0 ]; then
+      #"root" prompt colors username red and replaces $ with a red #
+      PS1='\[\e]0;\w\a\]\n\[\e[91m\]\u\[\e[32m\]@\h:\[\e[33m\]\w\[\e[91m\]#\[\e[0m\] '
+      echo "Remember: \"With root power comes root responsibility.\""
+   else
+      PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h:\[\e[33m\]\w\[\e[0m\]\$ '
+   fi
 fi
 
 unset color_prompt force_color_prompt
@@ -123,9 +124,9 @@ esac
 
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
-    if [ -r ~/.dircolors ]; then
-	eval "$(dircolors -b)"
-	eval "$(dircolors -b ~/.dircolors | sed 's/^LS_COLORS=/LS_COLORS=$LS_COLORS:/')"	#FXG: append our colors
+    if [ -r $HOME/.dircolors ]; then
+       eval "$(dircolors -b)"
+       eval "$(dircolors -b $HOME/.dircolors | sed 's/^LS_COLORS=/LS_COLORS=$LS_COLORS:/')"	#FXG: append our colors
     fi
 
     alias ls='ls -hF --color=auto'	#human-readable, append type indicator character
@@ -138,13 +139,13 @@ if [ -x /usr/bin/dircolors ]; then
 fi
 
 #FXG Aliases
-if [ -f .alias ]; then
-	source .alias
+if [ -f $HOME/.alias ]; then
+   source $HOME/.alias
 fi
 
 #FXG Aliases
-if [ -f .function ]; then
-	source .function
+if [ -f $HOME/.function ]; then
+   source $HOME/.function
 fi
 
 alias h='history'
@@ -173,8 +174,8 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 # ~/.bash_aliases, instead of adding them here directly.
 # See /usr/share/doc/bash-doc/examples in the bash-doc package.
 
-if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
+if [ -f $HOME/.bash_aliases ]; then
+    . $HOME/.bash_aliases
 fi
 
 # enable programmable completion features (you don't need to enable
@@ -188,4 +189,8 @@ if ! shopt -oq posix; then
   fi
 fi
 
-export PASSWORD_STORE_DIR=~/pass
+# only on the desktop VM
+if [ -d $HOME/pass ]; then
+    echo Found $HOME/pass
+    export PASSWORD_STORE_DIR=$HOME/pass
+fi
