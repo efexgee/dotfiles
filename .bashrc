@@ -104,10 +104,10 @@ fi
 if [ "$color_prompt" = yes ]; then
    if [ $(id -u) == 0 ]; then
       #"root" prompt colors username red and replaces $ with a red #
-      PS1='\[\e]0;\w\a\]\n\[\e[91m\]\u\[\e[32m\]@\h:\[\e[33m\]\w\[\e[91m\]#\[\e[0m\] '
+      PS1='\n\T \[\e[91m\]\u\[\e[32m\]@\h:\[\e[33m\]\w\[\e[91m\]#\[\e[0m\] '
       echo "Remember: \"With root power comes root responsibility.\""
    else
-      PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h:\[\e[33m\]\w\[\e[0m\]\$ '
+      PS1='\n\T \[\e[32m\]\u@\h:\[\e[33m\]\w\[\e[0m\]\$ '
    fi
 fi
 
