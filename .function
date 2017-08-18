@@ -484,3 +484,22 @@ function qproj_probe () {
     egrep -v '(enabled *TRUE$|{|})' |
     sed 's/^ *//'
 }
+
+#check for running jobs on a node
+function qhjobs () {
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# > 1 )); then
+        echo "Usage: $func_name [HOSTNAME] (default: current host)"
+        return 1
+    fi
+
+    if (( $# == 0 )); then
+        node=`hostname -s`
+    else
+        node=$1
+    fi
+
+    qhost -j -h $node
+}
+
