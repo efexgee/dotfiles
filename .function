@@ -112,7 +112,7 @@ function qq_size () {
 	fi
 
 	qqb fs_read_dir_aggregates --path $1 |
-	jq -r '[(.total_capacity | tonumber), (.total_files | tonumber), (.total_directories | tonumber), (.path | split("/"))[-2]] | @csv' |
+	jq -r '[(.total_data | tonumber), (.total_files | tonumber), (.total_directories | tonumber), (.path | split("/"))[-2]] | @csv' |
 	tr -d '"' |
 	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $1 / 1024^3, $2 + $3, $4}'
 }
@@ -168,7 +168,7 @@ function qq_sizes () {
 	fi
 
 	qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --max-entries $max_entries --path $path |
-	jq -r '.files[] | [(.capacity_usage | tonumber), (.num_files | tonumber), (.num_directories | tonumber), .name] | @csv' |
+	jq -r '.files[] | [(.data_usage | tonumber), (.num_files | tonumber), (.num_directories | tonumber), .name] | @csv' |
 	tr -d '"' |
 	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $path / 1024^3, $2 + $3, $4}'
 
@@ -224,7 +224,7 @@ function qq_sizes_csv () {
 	fi
 
 	qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --max-entries $max_entries --path $path |
-	jq -r '.files[] | [(.capacity_usage | tonumber) / 1024 / 1024 / 1024, (.num_files | tonumber) + (.num_directories | tonumber), .name] | @csv' |
+	jq -r '.files[] | [(.data_usage | tonumber) / 1024 / 1024 / 1024, (.num_files | tonumber) + (.num_directories | tonumber), .name] | @csv' |
     tr -d '"'
 }
 #get size and number of directories
@@ -278,7 +278,7 @@ function qq_dirs () {
 	fi
 
 	qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --max-entries $max_entries --path $path |
-	jq -r '.files[] | [(.capacity_usage | tonumber), (.num_directories | tonumber), .name] | @csv' |
+	jq -r '.files[] | [(.data_usage | tonumber), (.num_directories | tonumber), .name] | @csv' |
 	tr -d '"' |
 	awk -F, '{printf "%10'\''.1f Gb %12'\''d dirs  %s\n", $path / 1024^3, $2, $3}'
 
@@ -501,5 +501,55 @@ function qhjobs () {
     fi
 
     qhost -j -h $node
+}
+
+#wrapper around Qumulo agg_tree_diff
+function qq_diff () {
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <path>"
+        return 1
+    fi
+
+    ID=$RANDOM
+    SRC_CLUSTER="blah-fs"
+    DEST_CLUSTER="chagas-fs"
+
+    path=$1
+    path_label=`echo $path | sed s#^/## | tr / .`
+
+    outfile_prefix="agg_diff.$path_label.$ID"
+    dirs_output="$outfile_prefix.dirs"
+    files_output="$outfile_prefix.files"
+
+    ~falko/scripts/agg_diff/agg_diff.py --host-src $SRC_CLUSTER --cred-store-src ~/.qfsd_cred.$SRC_CLUSTER --host-target $DEST_CLUSTER --cred-store-target ~/.qfsd_cred.$DEST_CLUSTER --path $path --dirs-out-file $dirs_output --files-out-file $files_output
+
+    more $dirs_output
+}
+
+#wrapper around Qumulo agg_tree_diff
+function qq_diff () {
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <path>"
+        return 1
+    fi
+
+    ID=$RANDOM
+    SRC_CLUSTER="blah-fs"
+    DEST_CLUSTER="chagas-fs"
+
+    path=$1
+    path_label=`echo $path | sed s#^/## | tr / .`
+
+    outfile_prefix="agg_diff.$path_label.$ID"
+    dirs_output="$outfile_prefix.dirs"
+    files_output="$outfile_prefix.files"
+
+    ~falko/scripts/agg_diff/agg_diff.py --host-src $SRC_CLUSTER --cred-store-src ~/.qfsd_cred.$SRC_CLUSTER --host-target $DEST_CLUSTER --cred-store-target ~/.qfsd_cred.$DEST_CLUSTER --path $path --dirs-out-file $dirs_output --files-out-file $files_output
+
+    more $dirs_output
 }
 
