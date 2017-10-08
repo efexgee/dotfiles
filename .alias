@@ -17,6 +17,9 @@ alias qwhat='qconf -help 2>&1 | grep'
 # Qumulo Aliases
 # 
 
+#append NFS server name to end of df output
+alias qq_df="df -PT | awk '{if (\$2 == \"nfs\") { \"host \`echo \"\$1\" | cut -d: -f1\` | grep -o '[[:alpha:]]*-fs' \" | getline nfs_server; print \$0 \" (\"nfs_server\")\"} else {print}}'"
+
 #run qq against one of the clusters
 alias qqb="qq --credentials-store ~/.qfsd_cred.blah-fs --host blah-fs"
 alias qqf="qq --credentials-store ~/.qfsd_cred.fast-fs --host fast-fs"
@@ -43,12 +46,14 @@ alias bfsplit='qfsplit --host blah-fs --credentials-store ~/.qfsd_cred.blah-fs'
 alias fill='cut -c1-`tput cols`'
 alias fun='typeset -f'
 alias tail1='tail -q -n 1'
+alias nf='awk "{print \$NF}"'
 
 #create a tombstoning directory for staged deletions
 alias tombstone='sudo mkdir TO_BE_DELETED && sudo chgrp IHME-SA TO_BE_DELETED && sudo touch TO_BE_DELETED/timestamp.`date +"%s"`'
 
 # Conda
 alias py2='source activate py2'
+alias py3="source activate py3"
 alias deconda='source deactivate'
 
 # screen

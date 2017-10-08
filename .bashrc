@@ -143,7 +143,7 @@ if [ -f $HOME/.alias ]; then
    source $HOME/.alias
 fi
 
-#FXG Aliases
+#FXG Functions
 if [ -f $HOME/.function ]; then
    source $HOME/.function
 fi

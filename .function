@@ -171,8 +171,8 @@ function qq_sizes () {
 	jq -r '.files[] | [(.data_usage | tonumber), (.num_files | tonumber), (.num_directories | tonumber), .name] | @csv' |
 	tr -d '"' |
 	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $path / 1024^3, $2 + $3, $4}'
-
 }
+
 #do the same thing but make CSVs
 function qq_sizes_csv () {
 	local func_name=${FUNCNAME[0]}
@@ -322,7 +322,8 @@ function githubbify () {
 #list all running rsyncs, deriving a label from the logfile name
 function rsync_ps () {
 	if [ "$1" = "-u" ]; then
-		ps h -C rsync k -etime -o etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k4 | uniq -s 47
+		#ps h -C rsync k -etime -o etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k4 | uniq -s 47
+		ps h -C rsync k -etime -o etime,tty,args | sed "s#pts/##; s/ *rsync .*--log-file \([^ ]*\)\.log .*/ \1/" | sort -k4 | uniq -s 47
 	else
 		ps h -C rsync k -s,-etime -o s,etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k5 | egrep "(^[RT]|$)"
 	fi
@@ -507,49 +508,29 @@ function qhjobs () {
 function qq_diff () {
     local func_name=${FUNCNAME[0]}
 
-    if (( $# != 1 )); then
-        echo "Usage: $func_name <path>"
+    if ! (( $# == 1 || $# == 2)); then
+        echo "Usage: $func_name <path> <-v,-vv,-vvv>"
         return 1
     fi
 
-    ID=$RANDOM
-    SRC_CLUSTER="blah-fs"
-    DEST_CLUSTER="chagas-fs"
-
-    path=$1
-    path_label=`echo $path | sed s#^/## | tr / .`
-
-    outfile_prefix="agg_diff.$path_label.$ID"
-    dirs_output="$outfile_prefix.dirs"
-    files_output="$outfile_prefix.files"
-
-    ~falko/scripts/agg_diff/agg_diff.py --host-src $SRC_CLUSTER --cred-store-src ~/.qfsd_cred.$SRC_CLUSTER --host-target $DEST_CLUSTER --cred-store-target ~/.qfsd_cred.$DEST_CLUSTER --path $path --dirs-out-file $dirs_output --files-out-file $files_output
-
-    more $dirs_output
-}
-
-#wrapper around Qumulo agg_tree_diff
-function qq_diff () {
-    local func_name=${FUNCNAME[0]}
-
-    if (( $# != 1 )); then
-        echo "Usage: $func_name <path>"
-        return 1
+    if (($# == 2)); then
+        local verbose=$2
     fi
 
-    ID=$RANDOM
-    SRC_CLUSTER="blah-fs"
-    DEST_CLUSTER="chagas-fs"
+    #local ID=$RANDOM
+    local SRC_CLUSTER="blah-fs"
+    local DEST_CLUSTER="chagas-fs"
 
-    path=$1
-    path_label=`echo $path | sed s#^/## | tr / .`
+    local path=$1
+    local path_label=`echo $path | sed 's#^/##' | tr '/' '.'`
 
-    outfile_prefix="agg_diff.$path_label.$ID"
-    dirs_output="$outfile_prefix.dirs"
-    files_output="$outfile_prefix.files"
+    local outfile_prefix="agg_diff.$path_label.$ID"
+    local dirs_output="$outfile_prefix.dirs"
+    local files_output="$outfile_prefix.files"
 
-    ~falko/scripts/agg_diff/agg_diff.py --host-src $SRC_CLUSTER --cred-store-src ~/.qfsd_cred.$SRC_CLUSTER --host-target $DEST_CLUSTER --cred-store-target ~/.qfsd_cred.$DEST_CLUSTER --path $path --dirs-out-file $dirs_output --files-out-file $files_output
+    #~falko/scripts/agg_diff/agg_diff.py --host-src $SRC_CLUSTER --cred-store-src ~/.qfsd_cred.$SRC_CLUSTER --host-target $DEST_CLUSTER --cred-store-target ~/.qfsd_cred.$DEST_CLUSTER --path $path --dirs-out-file $dirs_output --files-out-file $files_output $verbose
+    ~falko/scripts/agg_diff/agg_diff.py -r -f --host-src $SRC_CLUSTER --cred-store-src ~/.qfsd_cred.$SRC_CLUSTER --host-target $DEST_CLUSTER --cred-store-target ~/.qfsd_cred.$DEST_CLUSTER --path $path $verbose
 
-    more $dirs_output
+    #more $dirs_output
 }
 
