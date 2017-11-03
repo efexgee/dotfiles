@@ -323,7 +323,7 @@ function githubbify () {
 function rsync_ps () {
 	if [ "$1" = "-u" ]; then
 		#ps h -C rsync k -etime -o etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k4 | uniq -s 47
-		ps h -C rsync k -etime -o etime,tty,args | sed "s#pts/##; s/ *rsync .*--log-file \([^ ]*\)\.log .*/ \1/" | sort -k4 | uniq -s 47
+		ps h -C rsync k -etime -o etime,tty,args | sed "s#pts/##; s/ *rsync .*--log-file \([^ ]*\)\.log .*/ \1/" | sort -k3 | uniq -s 14 | sed 's/ \([0-9]\) /  \1 /'
 	else
 		ps h -C rsync k -s,-etime -o s,etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k5 | egrep "(^[RT]|$)"
 	fi
@@ -365,7 +365,7 @@ function fix_buckets () {
 	fi
 	
 
-	if [ -f qsync_*.txt ]; then 
+	if [ ! -f qsync_* ]; then 
 		echo "Usage: $func_name <new bucket prefix> (must be run in a directory with qsplit buckets)"
 		echo "Error: No bucket files found"
 		return 1
@@ -373,10 +373,10 @@ function fix_buckets () {
 	
 	local bucket
 
-	for bucket in `ls qsync*bucket*.txt`; do
-		local bucket_id=`echo $bucket | sed "s/qsync_[0-9]*_bucket\([0-9]*\).txt/\1/"`
-		bucket_id=`printf "%02d" $bucket_id`
-		mv -v $bucket ${1}_bucket$bucket_id
+	for bucket in `ls qsync*bucket*`; do
+		local bucket_id=`echo $bucket | sed "s/qsync_[0-9_]*\.bucket_\([0-9]*\)/\1/"`
+		#bucket_id=`printf "%02d" $bucket_id`
+		mv -v $bucket ${1}_bucket_$bucket_id
 	done
 
 	echo "Updating bucket timestamps"
