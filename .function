@@ -319,6 +319,36 @@ function githubbify () {
 	echo "Done."
 }
 
+#shove an existing git repo into IHME's Bitbucket
+function bbify () {
+	#requires:
+	if (( $# != 1 )); then
+		echo "Usage: $0 <repo name>"
+		return
+	fi
+
+    local user=$USER
+	local name=$1
+
+    local URL="stash.ihme.washington.edu"
+
+	local remote="ihme.$name"
+
+	local curl_data='{"name":"'$name'","scmId":"git"}'
+    local curl_header='Content-Type: application/json'
+
+	echo "Creating new repo ($remote) on BitBucket..."
+	curl -u $user https://$URL/rest/api/1.0/users/$user/repos -H "$curl_header" -X POST -d "$curl_data" || return 1
+
+	echo "Adding BitBucket repo as a remote..."
+	git remote add $remote "ssh://git@$URL:7999/~$user/$name.git" || return 2
+
+	echo "Pushing local Git repo to BitBucket: $remote"
+	git push --set-upstream $remote master || return 3
+	echo "Done."
+}
+
+
 #list all running rsyncs, deriving a label from the logfile name
 function rsync_ps () {
 	if [ "$1" = "-u" ]; then
