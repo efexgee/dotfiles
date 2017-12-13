@@ -2,7 +2,7 @@
 # UGE Cluster
 #
 
-alias qbad='qstat -f | awk "{if (NF > 5) print}"'
+alias qbad='qstat -f | awk "{if (NF > 5) print}" | egrep "(`hostname -s`|$)"'
 alias qslots='qstat -g c'
 alias qerr='qstat -qs E -f -explain E | awk "/^---*$/ { print \"\"; next} /^queuename/ { print \"\$1, \$6, error job node\"; next } /^[^ ]*@/ { node_info=\"$1 - $6\"; next } { print node_info $0 }" | sed "s/\.ihme\.wash.[^ ]*//g; s/\t*queue [^ ]* marked / - /; s/ as result of / - /; s/.s failure at host / - on /"'
 alias qqlogins='qstat -u \* | egrep "(QLOGIN|qlogins@)" | sort -k4 | awk "{ if (\$9 >= 10 && \$5 == \"r\") printf \"%d %-8s %10s %8s %s %d\n\", \$1, \$4, \$6, \$7, \$8, \$9, \$NF}"'
@@ -36,8 +36,9 @@ alias qqaf="qqla fast"
 alias qqad="qqla dengue"
 alias qqac="qqla chagas"
 
-#qsplit
+#migration
 alias bfsplit='qfsplit --host blah-fs --credentials-store ~/.qfsd_cred.blah-fs'
+alias ex-sync='rsync_maker.py blah-fs chagas-fs --delete -x excludes'
 
 #
 # General
@@ -47,6 +48,9 @@ alias fill='cut -c1-`tput cols`'
 alias fun='typeset -f'
 alias tail1='tail -q -n 1'
 alias nf='awk "{print \$NF}"'
+
+alias stamp='date +"%Y%m%d_%H%M%S"'
+alias h_stamp='date +"%D %T"'
 
 #create a tombstoning directory for staged deletions
 alias tombstone='sudo mkdir TO_BE_DELETED && sudo chgrp IHME-SA TO_BE_DELETED && sudo touch TO_BE_DELETED/timestamp.`date +"%s"`'
@@ -62,3 +66,6 @@ alias name-window-dir='screen -X title "$(printf "%2s - %s" `basename \`tty\`` `
 
 # default command flags
 alias split='split --numeric-suffixes=01'
+alias lsblk='lsblk -o TYPE,NAME,KNAME,MAJ:MIN,MODEL,SIZE,ROTA'
+alias df='df -PT'
+alias grep='grep --color=auto -d skip'
