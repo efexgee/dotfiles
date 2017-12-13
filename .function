@@ -137,8 +137,9 @@ function qq_sizes () {
 		local cluster=$1
 		local path=$2
 	else
-		local cluster=`host \`df --output=source . | tail -1 | cut -d\: -f1\` | awk -F'[ .]' '{print $10}'`
-		local path=`pwd | sed "s#\`dirname \\\`df --output=target . | tail -1\\\`\`##"`
+        # need to use basic df here because --output clashes with some other flags
+        local cluster=$(host $(df -P . | tail -1 | awk -F'[: ]' '{print $1}') | awk -F'[ .]' '{print $10}')
+        local path=$(pwd -P | sed "s#$(dirname $(df -P . | tail -1 | awk '{print $NF}'))##")
 	fi
 
 	local token_file=~/.qfsd_cred.${cluster}
@@ -438,19 +439,6 @@ function check_node () {
 	printf "%-12s: %s\n" "queue" $queue
 }
 
-#compare qq_sizes on two different Qumulos
-function qq_comp () {
-    local path=$1;
-    local left=blah-fs;
-    local right=chagas-fs;
-
-    echo $left;
-    qq_sizes $left $path;
-
-    echo $right;
-    qq_sizes $right $path;
-}
-
 #list all snapshots and their sizes
 function qq_snaps () {
 	local func_name=${FUNCNAME[0]}
@@ -534,6 +522,51 @@ function qhjobs () {
     qhost -j -h $node
 }
 
+#disable a node
+#function d-node () {
+#    local func_name=${FUNCNAME[0]}
+#    # need to keep OPTIND inside the function
+#    local OPTIND
+#
+#    if ! which qmod > /dev/null; then
+#        echo "$func_name: no 'qmod' in path. Is this a cluster node?"
+#        return 10
+#    fi
+#
+#    echo $@
+#
+#    if (( $# > 3 )); then
+#        $@+=("PRINT_USAGE")
+#    fi
+#
+#    echo $@
+#
+#    while getopts m: option; do
+#        case "$option" in
+#            m) message=$OPTARG ;;
+#            *) echo "Usage: $func_name -m <message> [node_name]"
+#               echo
+#               echo "  node_name  optional (default: current host)"
+#               echo "  message    reason for disabling (single string)"
+#               return 1 ;;
+#         esac
+#    done
+#
+#    echo $#
+#    echo $OPTIND
+#
+#    echo "message: $message"
+#    return
+#
+#    if (( $# == 0 )); then
+#        node=`hostname -s`
+#    else
+#        node=$1
+#    fi
+#
+#    qhost -j -h $node
+#}
+#
 #wrapper around Qumulo agg_tree_diff
 function qq_diff () {
     local func_name=${FUNCNAME[0]}
