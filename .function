@@ -632,3 +632,15 @@ function scsh () {
 
     ssh $host
 }
+
+#list all nodes restricted to projects
+function qordon () {
+    for line in $(qstat -f | grep '@' | awk -F'(@| *)' '{printf "%3s,%s\n", gensub(".*/","","",$4), gensub("\\..*","","",$2)}'); do
+        node=`echo $line | cut -d, -f2`
+        slots=`echo $line | cut -d, -f1`
+        qconf_output=`qconf -se $node | grep '^projects *proj' | tr -s ' ' | sed 's/^projects //'`
+        if [[ -n $qconf_output ]]; then
+            printf "%3s %-12s %s\n" $slots $node "$qconf_output"
+        fi
+    done | sort -k3
+}
