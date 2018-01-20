@@ -111,7 +111,7 @@ function qq_size () {
 		return 2
 	fi
 
-	qqb fs_read_dir_aggregates --path $1 |
+	qqc fs_read_dir_aggregates --path $1 |
 	jq -r '[(.total_data | tonumber), (.total_files | tonumber), (.total_directories | tonumber), (.path | split("/"))[-2]] | @csv' |
 	tr -d '"' |
 	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $1 / 1024^3, $2 + $3, $4}'
@@ -360,6 +360,11 @@ function rsync_ps () {
 	fi
 }
 
+#list all running tars, deriving a label from the archive name
+function tar_ps () {
+	ps h -C tar k -etime -o etime,tty,args | sed "s#pts/##; s/ *tar .* \([^ ]*\)\.tar .*/ \1/" | sort -k3 | uniq -s 14 | sed 's/ \([0-9]\) /  \1 /'
+}
+
 #list all running rm's
 function rm_ps () {
 	if [ "$1" = "-u" ]; then
@@ -519,7 +524,20 @@ function qhjobs () {
         node=$1
     fi
 
-    qhost -j -h $node
+    qhost -j -h $node |
+    awk 'NR <= 4 { print "   " $0}      # indent the first 4 lines
+            NR == 4 { print "" }        # print a blank line
+            NR > 4 && NR <= 6 { print } # just print lines 5 - 6
+            NR > 6 {
+                # lines with more than 9 columns are array tasks
+                if ( NF > 9 )
+                    { print gensub(/^   /, "  A", $0) }
+                else
+                    { print } }' |
+    # the grep highlights array tasks based on a different test to hopefully
+    # make it more reliable or at least fail loud
+    egrep -e '$' -e '.* [0-9]+$'           # ends in numeral, it's an array task
+
 }
 
 #disable a node
@@ -597,3 +615,20 @@ function qq_diff () {
     #more $dirs_output
 }
 
+#ssh and name your screen window for that host
+function scsh () {
+    local func_name=${FUNCNAME[0]}
+
+    if ! (( $# == 1 || $# == 2)); then
+        echo "Usage: $func_name <hostname>"
+        return 1
+    fi
+
+    local host=$1
+
+    if screen -X version > /dev/null 2>&1; then
+        screen -X title "$(printf "%2s - %s" $(basename $(tty)) $host)"
+    fi
+
+    ssh $host
+}
