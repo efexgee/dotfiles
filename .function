@@ -1,457 +1,457 @@
 #print a slice of a file, N lines long starting at line M
 buckets () {
-	# $1 : rsync command line file
-	# $2 : starting line (starting bucket number)
-	# $3 : number of lines (number of buckets)
+    # $1 : rsync command line file
+    # $2 : starting line (starting bucket number)
+    # $3 : number of lines (number of buckets)
 
-	if (( $# != 3 )); then
-		echo "Usage: $0 <rsync commands file> <number of buckets> <start bucket id>"
-		return 1
-	elif [ ! -f $1 ]; then
-		echo "File not found: $1"
-		return 2
-	fi
+    if (( $# != 3 )); then
+        echo "Usage: $0 <rsync commands file> <number of buckets> <start bucket id>"
+        return 1
+    elif [ ! -f $1 ]; then
+        echo "File not found: $1"
+        return 2
+    fi
 
-	file=$1
-	number=$2
-	start=$3
+    file=$1
+    number=$2
+    start=$3
 
-	tail -n +${start} $file | head -${number}
+    tail -n +${start} $file | head -${number}
 
-	echo
-	echo "Printed $1: lines $start - $(($start + $number - 1))"
+    echo
+    echo "Printed $1: lines $start - $(($start + $number - 1))"
 }
 
 #print summary of all rsyncs' status
 rsync_report () {
-	finished=0
-	output=`for log_file in \`ls -1 *.log\`; do
-		tail=\`tail -1 $log_file\`
-		if ! echo $tail | grep sent > /dev/null; then
-			lines=\`wc -l $log_file | cut -d\  -f1\`
-		else
-			lines="?"
-		fi
-		label=${log_file/.log/}
-		printf "%s %8s : $tail\n" $label $lines
-		done`
-	echo "$output" | egrep -v "(] sent |rsync error)" | cut -c1-`tput cols`
-	building=`echo "$output" | grep -c "building file list"`
-	error=`echo "$output" | grep -c "rsync error"`
-	finished=`echo "$output" | grep -c "] sent"`
-	echo
-	other=$(( `echo "$output" | wc -l` - $finished - $building - $error ))
-	printf "Building: %3d\nError: %6d\nOther: %6d\nComplete: %3d\n" $building $error $other $finished
+    finished=0
+    output=`for log_file in \`ls -1 *.log\`; do
+        tail=\`tail -1 $log_file\`
+        if ! echo $tail | grep sent > /dev/null; then
+            lines=\`wc -l $log_file | cut -d\  -f1\`
+        else
+            lines="?"
+        fi
+        label=${log_file/.log/}
+        printf "%s %8s : $tail\n" $label $lines
+        done`
+    echo "$output" | egrep -v "(] sent |rsync error)" | cut -c1-`tput cols`
+    building=`echo "$output" | grep -c "building file list"`
+    error=`echo "$output" | grep -c "rsync error"`
+    finished=`echo "$output" | grep -c "] sent"`
+    echo
+    other=$(( `echo "$output" | wc -l` - $finished - $building - $error ))
+    printf "Building: %3d\nError: %6d\nOther: %6d\nComplete: %3d\n" $building $error $other $finished
 }
 
 #print percent complete on boom migration
 boom_mig_progress () {
-	df /qumulo/boom-fs/node_06/forecasting/ /qumulo/dengue-fs/node_06/forecasting/ --output=target,used |
-	awk '/boom-fs/ { boom = $NF } /dengue-fs/ { dengue = $NF } END { printf "%3.1f%% complete\n", dengue / boom * 100 }'
+    df /qumulo/boom-fs/node_06/forecasting/ /qumulo/dengue-fs/node_06/forecasting/ --output=target,used |
+    awk '/boom-fs/ { boom = $NF } /dengue-fs/ { dengue = $NF } END { printf "%3.1f%% complete\n", dengue / boom * 100 }'
 }
 
 #log into a Qumulo cluster
 qql () {
-	local API_PASSWORD="qapi"
+    local API_PASSWORD="qapi"
 
-	local cluster="${1}-fs"
-	local user="${cluster}-api"
-	local qq_c="--host $cluster"
-	local qq_cred="--credentials-store $HOME/.qfsd_cred.$cluster"
+    local cluster="${1}-fs"
+    local user="${cluster}-api"
+    local qq_c="--host $cluster"
+    local qq_cred="--credentials-store $HOME/.qfsd_cred.$cluster"
 
-	qq $qq_cred $qq_c login -u $user -p $API_PASSWORD > /dev/null
+    qq $qq_cred $qq_c login -u $user -p $API_PASSWORD > /dev/null
 
-	if [ $? -eq 0 ]; then
-		host=`qq $qq_cred $qq_c cluster_conf | jq -r '.cluster_name'`
-		login=`qq $qq_cred $qq_c who_am_i | jq -r '.name' 2> /dev/null`
-		echo "${login} @ ${host}"
-	else
-		echo "Couldn't log into $cluster [Exit code: $?]"
-	fi
+    if [ $? -eq 0 ]; then
+        host=`qq $qq_cred $qq_c cluster_conf | jq -r '.cluster_name'`
+        login=`qq $qq_cred $qq_c who_am_i | jq -r '.name' 2> /dev/null`
+        echo "${login} @ ${host}"
+    else
+        echo "Couldn't log into $cluster [Exit code: $?]"
+    fi
 }
 
 #log into a Qumulo cluster as admin
 qqla () {
 
-	local cluster="${1}-fs"
-	local user="admin"
-	local qq_c="--host $cluster"
-	local qq_cred="--credentials-store $HOME/.qfsd_cred.$cluster"
+    local cluster="${1}-fs"
+    local user="admin"
+    local qq_c="--host $cluster"
+    local qq_cred="--credentials-store $HOME/.qfsd_cred.$cluster"
 
-	echo -n "$cluster Admin "
-	qq $qq_cred $qq_c login -u $user > /dev/null
+    echo -n "$cluster Admin "
+    qq $qq_cred $qq_c login -u $user > /dev/null
 
-	if [ $? -eq 0 ]; then
-		host=`qq $qq_cred $qq_c cluster_conf | jq -r '.cluster_name'`
-		login=`qq $qq_cred $qq_c who_am_i | jq -r '.name' 2> /dev/null`
-		echo "${login} @ ${host}"
-	else
-		echo "Couldn't log into $cluster [Exit code: $?]"
-	fi
+    if [ $? -eq 0 ]; then
+        host=`qq $qq_cred $qq_c cluster_conf | jq -r '.cluster_name'`
+        login=`qq $qq_cred $qq_c who_am_i | jq -r '.name' 2> /dev/null`
+        echo "${login} @ ${host}"
+    else
+        echo "Couldn't log into $cluster [Exit code: $?]"
+    fi
 }
 
 #show idle logins
 #find all job IDs in the qlogins@ queue and find ones that are not using any memory
 #TODO add CPU time
 qidle () {
-	for job in `qstat -u \* | grep 'qlogins@' | awk '{ print $1 }'`; do
-		qstat -j $job
-	done | awk '/^job_number/ { job=$NF; slots=1} /^owner/ { user=$NF } /^parallel environment/ { slots=$NF } /^exec_host_list/ { FS="," } /^usage/ { if ( $3 == " mem=0.00000 GBs") { printf "%-10d %3d %-8s %-10s %-15s\n", job, slots, user, $2, $5} FS=" "}'
+    for job in `qstat -u \* | grep 'qlogins@' | awk '{ print $1 }'`; do
+        qstat -j $job
+    done | awk '/^job_number/ { job=$NF; slots=1} /^owner/ { user=$NF } /^parallel environment/ { slots=$NF } /^exec_host_list/ { FS="," } /^usage/ { if ( $3 == " mem=0.00000 GBs") { printf "%-10d %3d %-8s %-10s %-15s\n", job, slots, user, $2, $5} FS=" "}'
 }
 
 #get size and file count of a directory via Qumulo API
 function qq_size () {
-	if (( $# != 1 )); then
-		echo "Usage: ${FUNCNAME[0]} <full Qumulo path>"
-		return 1
-	fi
+    if (( $# != 1 )); then
+        echo "Usage: ${FUNCNAME[0]} <full Qumulo path>"
+        return 1
+    fi
 
-	if ! echo $1 | grep -q '^/'; then
-		echo "${FUNCNAME[0]}: path needs to start with a slash"
-		return 2
-	fi
+    if ! echo $1 | grep -q '^/'; then
+        echo "${FUNCNAME[0]}: path needs to start with a slash"
+        return 2
+    fi
 
-	qqc fs_read_dir_aggregates --path $1 |
-	jq -r '[(.total_data | tonumber), (.total_files | tonumber), (.total_directories | tonumber), (.path | split("/"))[-2]] | @csv' |
-	tr -d '"' |
-	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $1 / 1024^3, $2 + $3, $4}'
+    qqc fs_read_dir_aggregates --path $1 |
+    jq -r '[(.total_data | tonumber), (.total_files | tonumber), (.total_directories | tonumber), (.path | split("/"))[-2]] | @csv' |
+    tr -d '"' |
+    awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $1 / 1024^3, $2 + $3, $4}'
 }
 
 #get size and file count of a directory via Qumulo API
 function qq_sizes () {
-	local func_name=${FUNCNAME[0]}
-	local max_entries=5000
+    local func_name=${FUNCNAME[0]}
+    local max_entries=5000
 
-	if (( $# > 2 )); then
-		echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
-		return 1
-	fi
+    if (( $# > 2 )); then
+        echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
+        return 1
+    fi
 
-	if (( $# == 1 )); then
-		echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
-		echo "Error: Either specify both cluster and path, or neither to use current location"
-		return 5
-	fi
+    if (( $# == 1 )); then
+        echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
+        echo "Error: Either specify both cluster and path, or neither to use current location"
+        return 5
+    fi
 
-	if (( $# == 2 )); then
-		local cluster=$1
-		local path=$2
-	else
+    if (( $# == 2 )); then
+        local cluster=$1
+        local path=$2
+    else
         # need to use basic df here because --output clashes with some other flags
         local cluster=$(host $(df -P . | tail -1 | awk -F'[: ]' '{print $1}') | awk -F'[ .]' '{print $10}')
         local path=$(pwd -P | sed "s#$(dirname $(df -P . | tail -1 | awk '{print $NF}'))##")
-	fi
+    fi
 
-	local token_file=~/.qfsd_cred.${cluster}
+    local token_file=~/.qfsd_cred.${cluster}
 
-	if ! [ -f $token_file ]; then
-		echo "$func_name: token file doesn't seem to exist: $token_file"
-		return 4
-	fi
+    if ! [ -f $token_file ]; then
+        echo "$func_name: token file doesn't seem to exist: $token_file"
+        return 4
+    fi
 
-	if ! $(echo $path | grep -q '^/'); then
-		echo "$func_name: path needs to start with a slash"
-		return 2
-	fi 
+    if ! $(echo $path | grep -q '^/'); then
+        echo "$func_name: path needs to start with a slash"
+        return 2
+    fi
 
-	local qq_output=`qq --host $cluster --credentials-store $token_file who_am_i`
+    local qq_output=`qq --host $cluster --credentials-store $token_file who_am_i`
 
-	if $(echo $qq_output | grep -q Error); then
-		echo "$func_name: Error talking to $cluster. Is there an established session?"
-		return 3
-	fi
+    if $(echo $qq_output | grep -q Error); then
+        echo "$func_name: Error talking to $cluster. Is there an established session?"
+        return 3
+    fi
 
-	local qq_login=`echo $qq_output | jq -r '.name' 2> /dev/null`
+    local qq_login=`echo $qq_output | jq -r '.name' 2> /dev/null`
 
-	if ! [ "$qq_login" = "admin" ]; then
-		echo "$func_name: Warning: Not logged in as admin (login = $qq_login). Some paths won't be accessible."
-		echo
-	fi
+    if ! [ "$qq_login" = "admin" ]; then
+        echo "$func_name: Warning: Not logged in as admin (login = $qq_login). Some paths won't be accessible."
+        echo
+    fi
 
-	qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --max-entries $max_entries --path $path |
-	jq -r '.files[] | [(.data_usage | tonumber), (.num_files | tonumber), (.num_directories | tonumber), .name] | @csv' |
-	tr -d '"' |
-	awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $path / 1024^3, $2 + $3, $4}'
+    qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --max-entries $max_entries --path $path |
+    jq -r '.files[] | [(.data_usage | tonumber), (.num_files | tonumber), (.num_directories | tonumber), .name] | @csv' |
+    tr -d '"' |
+    awk -F, '{printf "%10'\''.1f Gb %12'\''d files  %s\n", $path / 1024^3, $2 + $3, $4}'
 }
 
 #do the same thing but make CSVs
 function qq_sizes_csv () {
-	local func_name=${FUNCNAME[0]}
-	local max_entries=5000
+    local func_name=${FUNCNAME[0]}
+    local max_entries=5000
 
-	if (( $# > 2 )); then
-		echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
-		return 1
-	fi
+    if (( $# > 2 )); then
+        echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
+        return 1
+    fi
 
-	if (( $# == 1 )); then
-		echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
-		echo "Error: Either specify both cluster and path, or neither to use current location"
-		return 5
-	fi
+    if (( $# == 1 )); then
+        echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
+        echo "Error: Either specify both cluster and path, or neither to use current location"
+        return 5
+    fi
 
-	if (( $# == 2 )); then
-		local cluster=$1
-		local path=$2
-	else
-		local cluster=`host \`df --output=source . | tail -1 | cut -d\: -f1\` | awk -F'[ .]' '{print $10}'`
-		local path=`pwd | sed "s#\`dirname \\\`df --output=target . | tail -1\\\`\`##"`
-	fi
+    if (( $# == 2 )); then
+        local cluster=$1
+        local path=$2
+    else
+        local cluster=`host \`df --output=source . | tail -1 | cut -d\: -f1\` | awk -F'[ .]' '{print $10}'`
+        local path=`pwd | sed "s#\`dirname \\\`df --output=target . | tail -1\\\`\`##"`
+    fi
 
-	local token_file=~/.qfsd_cred.${cluster}
+    local token_file=~/.qfsd_cred.${cluster}
 
-	if ! [ -f $token_file ]; then
-		echo "$func_name: token file doesn't seem to exist: $token_file"
-		return 4
-	fi
+    if ! [ -f $token_file ]; then
+        echo "$func_name: token file doesn't seem to exist: $token_file"
+        return 4
+    fi
 
-	if ! $(echo $path | grep -q '^/'); then
-		echo "$func_name: path needs to start with a slash"
-		return 2
-	fi 
+    if ! $(echo $path | grep -q '^/'); then
+        echo "$func_name: path needs to start with a slash"
+        return 2
+    fi
 
-	local qq_output=`qq --host $cluster --credentials-store $token_file who_am_i`
+    local qq_output=`qq --host $cluster --credentials-store $token_file who_am_i`
 
-	if $(echo $qq_output | grep -q Error); then
-		echo "$func_name: Error talking to $cluster. Is there an established session?"
-		return 3
-	fi
+    if $(echo $qq_output | grep -q Error); then
+        echo "$func_name: Error talking to $cluster. Is there an established session?"
+        return 3
+    fi
 
-	local qq_login=`echo $qq_output | jq -r '.name' 2> /dev/null`
+    local qq_login=`echo $qq_output | jq -r '.name' 2> /dev/null`
 
-	if ! [ "$qq_login" = "admin" ]; then
-		echo "$func_name: Warning: Not logged in as admin (login = $qq_login). Some paths won't be accessible."
-		echo
-	fi
+    if ! [ "$qq_login" = "admin" ]; then
+        echo "$func_name: Warning: Not logged in as admin (login = $qq_login). Some paths won't be accessible."
+        echo
+    fi
 
-	qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --max-entries $max_entries --path $path |
-	jq -r '.files[] | [(.data_usage | tonumber) / 1024 / 1024 / 1024, (.num_files | tonumber) + (.num_directories | tonumber), .name] | @csv' |
+    qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --max-entries $max_entries --path $path |
+    jq -r '.files[] | [(.data_usage | tonumber) / 1024 / 1024 / 1024, (.num_files | tonumber) + (.num_directories | tonumber), .name] | @csv' |
     tr -d '"'
 }
 #get size and number of directories
 function qq_dirs () {
-	local func_name=${FUNCNAME[0]}
-	local max_entries=5000
+    local func_name=${FUNCNAME[0]}
+    local max_entries=5000
 
-	if (( $# > 2 )); then
-		echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
-		return 1
-	fi
+    if (( $# > 2 )); then
+        echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
+        return 1
+    fi
 
-	if (( $# == 1 )); then
-		echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
-		echo "Error: Either specify both cluster and path, or neither to use current location"
-		return 5
-	fi
+    if (( $# == 1 )); then
+        echo "Usage: $func_name [ <Qumulo cluster> <full Qumulo path> ]"
+        echo "Error: Either specify both cluster and path, or neither to use current location"
+        return 5
+    fi
 
-	if (( $# == 2 )); then
-		local cluster=$1
-		local path=$2
-	else
-		local cluster=`host \`df --output=source . | tail -1 | cut -d\: -f1\` | awk -F'[ .]' '{print $10}'`
-		local path=`pwd | sed "s#\`dirname \\\`df --output=target . | tail -1\\\`\`##"`
-	fi
+    if (( $# == 2 )); then
+        local cluster=$1
+        local path=$2
+    else
+        local cluster=`host \`df --output=source . | tail -1 | cut -d\: -f1\` | awk -F'[ .]' '{print $10}'`
+        local path=`pwd | sed "s#\`dirname \\\`df --output=target . | tail -1\\\`\`##"`
+    fi
 
-	local token_file=~/.qfsd_cred.${cluster}
+    local token_file=~/.qfsd_cred.${cluster}
 
-	if ! [ -f $token_file ]; then
-		echo "$func_name: token file doesn't seem to exist: $token_file"
-		return 4
-	fi
+    if ! [ -f $token_file ]; then
+        echo "$func_name: token file doesn't seem to exist: $token_file"
+        return 4
+    fi
 
-	if ! $(echo $path | grep -q '^/'); then
-		echo "$func_name: path needs to start with a slash"
-		return 2
-	fi 
+    if ! $(echo $path | grep -q '^/'); then
+        echo "$func_name: path needs to start with a slash"
+        return 2
+    fi
 
-	local qq_output=`qq --host $cluster --credentials-store $token_file who_am_i`
+    local qq_output=`qq --host $cluster --credentials-store $token_file who_am_i`
 
-	if $(echo $qq_output | grep -q Error); then
-		echo "$func_name: Error talking to $cluster. Is there an established session?"
-		return 3
-	fi
+    if $(echo $qq_output | grep -q Error); then
+        echo "$func_name: Error talking to $cluster. Is there an established session?"
+        return 3
+    fi
 
-	local qq_login=`echo $qq_output | jq -r '.name' 2> /dev/null`
+    local qq_login=`echo $qq_output | jq -r '.name' 2> /dev/null`
 
-	if ! [ "$qq_login" = "admin" ]; then
-		echo "$func_name: Warning: Not logged in as admin (login = $qq_login). Some paths won't be accessible."
-		echo
-	fi
+    if ! [ "$qq_login" = "admin" ]; then
+        echo "$func_name: Warning: Not logged in as admin (login = $qq_login). Some paths won't be accessible."
+        echo
+    fi
 
-	qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --max-entries $max_entries --path $path |
-	jq -r '.files[] | [(.data_usage | tonumber), (.num_directories | tonumber), .name] | @csv' |
-	tr -d '"' |
-	awk -F, '{printf "%10'\''.1f Gb %12'\''d dirs  %s\n", $path / 1024^3, $2, $3}'
+    qq --host $cluster --credentials-store $token_file fs_read_dir_aggregates --max-entries $max_entries --path $path |
+    jq -r '.files[] | [(.data_usage | tonumber), (.num_directories | tonumber), .name] | @csv' |
+    tr -d '"' |
+    awk -F, '{printf "%10'\''.1f Gb %12'\''d dirs  %s\n", $path / 1024^3, $2, $3}'
 
 }
 
 #shove an existing git repo into my personal GitHub account
 function githubbify () {
-	#requires:
-	#	user definition in .ssh/config
-	#	ssh key in .ssh
-	#	an API token for GitHub
-	#	the token defined as a git variable called github.token
-	if (( $# != 2 )); then
-		echo "Usage: $0 <repo name> <repo description>"
-		return
-	fi
+    #requires:
+    #    user definition in .ssh/config
+    #    ssh key in .ssh
+    #    an API token for GitHub
+    #    the token defined as a git variable called github.token
+    if (( $# != 2 )); then
+        echo "Usage: $0 <repo name> <repo description>"
+        return
+    fi
 
-	local user=efexgee
-	#github.token is not a standard git field, I think
-	local gh_token=`git config github.token`
+    local user=efexgee
+    #github.token is not a standard git field, I think
+    local gh_token=`git config github.token`
 
-	local name=$1
-	local descr=$2
+    local name=$1
+    local descr=$2
 
-	local remote="gh.$name"
+    local remote="gh.$name"
 
-	local curl_data='{"name":"'$name'","description":"'$descr'"}'
+    local curl_data='{"name":"'$name'","description":"'$descr'"}'
 
 
-	echo "Creating new repo ($remote) on GitHub..."
-	curl -u $user:$gh_token https://api.github.com/user/repos -d "$curl_data" || return 1
+    echo "Creating new repo ($remote) on GitHub..."
+    curl -u $user:$gh_token https://api.github.com/user/repos -d "$curl_data" || return 1
 
-	echo "Adding GitHub repo as a remote..."
-	git remote add $remote ssh://github.com/$user/$name || return 2
+    echo "Adding GitHub repo as a remote..."
+    git remote add $remote ssh://github.com/$user/$name || return 2
 
-	echo "Pushing local Git repo to GitHub repo..."
-	git push --set-upstream $remote master || return 3
-	echo "Done."
+    echo "Pushing local Git repo to GitHub repo..."
+    git push --set-upstream $remote master || return 3
+    echo "Done."
 }
 
 #shove an existing git repo into IHME's Bitbucket
 function bbify () {
-	#requires:
-	if (( $# != 1 )); then
-		echo "Usage: $0 <repo name>"
-		return
-	fi
+    #requires:
+    if (( $# != 1 )); then
+        echo "Usage: $0 <repo name>"
+        return
+    fi
 
     local user=$USER
-	local name=$1
+    local name=$1
 
     local URL="stash.ihme.washington.edu"
 
-	local remote="ihme.$name"
+    local remote="ihme.$name"
 
-	local curl_data='{"name":"'$name'","scmId":"git"}'
+    local curl_data='{"name":"'$name'","scmId":"git"}'
     local curl_header='Content-Type: application/json'
 
-	echo "Creating new repo ($remote) on BitBucket..."
-	curl -u $user https://$URL/rest/api/1.0/users/$user/repos -H "$curl_header" -X POST -d "$curl_data" || return 1
+    echo "Creating new repo ($remote) on BitBucket..."
+    curl -u $user https://$URL/rest/api/1.0/users/$user/repos -H "$curl_header" -X POST -d "$curl_data" || return 1
 
-	echo "Adding BitBucket repo as a remote..."
-	git remote add $remote "ssh://git@$URL:7999/~$user/$name.git" || return 2
+    echo "Adding BitBucket repo as a remote..."
+    git remote add $remote "ssh://git@$URL:7999/~$user/$name.git" || return 2
 
-	echo "Pushing local Git repo to BitBucket: $remote"
-	git push --set-upstream $remote master || return 3
-	echo "Done."
+    echo "Pushing local Git repo to BitBucket: $remote"
+    git push --set-upstream $remote master || return 3
+    echo "Done."
 }
 
 
 #list all running rsyncs, deriving a label from the logfile name
 function rsync_ps () {
-	if [ "$1" = "-u" ]; then
-		#ps h -C rsync k -etime -o etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k4 | uniq -s 47
-		ps h -C rsync k -etime -o etime,tty,args | sed "s#pts/##; s/ *rsync .*--log-file \([^ ]*\)\.log .*/ \1/" | sort -k3 | uniq -s 14 | sed 's/ \([0-9]\) /  \1 /'
-	else
-		ps h -C rsync k -s,-etime -o s,etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k5 | egrep "(^[RT]|$)"
-	fi
+    if [ "$1" = "-u" ]; then
+        #ps h -C rsync k -etime -o etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k4 | uniq -s 47
+        ps h -C rsync k -etime -o etime,tty,args | sed "s#pts/##; s/ *rsync .*--log-file \([^ ]*\)\.log .*/ \1/" | sort -k3 | uniq -s 14 | sed 's/ \([0-9]\) /  \1 /'
+    else
+        ps h -C rsync k -s,-etime -o s,etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k5 | egrep "(^[RT]|$)"
+    fi
 }
 
 #list all running tars, deriving a label from the archive name
 function tar_ps () {
-	ps h -C tar k -etime -o etime,tty,args | sed "s#pts/##; s/ *tar .* \([^ ]*\)\.tar .*/ \1/" | sort -k3 | uniq -s 14 | sed 's/ \([0-9]\) /  \1 /'
+    ps h -C tar k -etime -o etime,tty,args | sed "s#pts/##; s/ *tar .* \([^ ]*\)\.tar .*/ \1/" | sort -k3 | uniq -s 14 | sed 's/ \([0-9]\) /  \1 /'
 }
 
 #list all running rm's
 function rm_ps () {
-	if [ "$1" = "-u" ]; then
-		ps h -C rm k -etime -o etime,tty,wchan:23,args | sort -k4 | uniq -s 47
-	else
-		ps h -C rm k -s,-etime -o s,etime,tty,wchan:23,args | sort -k5 | egrep "(^[RT]|$)"
-	fi
+    if [ "$1" = "-u" ]; then
+        ps h -C rm k -etime -o etime,tty,wchan:23,args | sort -k4 | uniq -s 47
+    else
+        ps h -C rm k -s,-etime -o s,etime,tty,wchan:23,args | sort -k5 | egrep "(^[RT]|$)"
+    fi
 }
 
 #condense rsync log
 function rsync_log () {
         local func_name=${FUNCNAME[0]}
 
-	if (( $# != 1 )); then
-		echo "Usage: $func_name <rsync log file>"
-		return 1
-	fi
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <rsync log file>"
+        return 1
+    fi
 
-	local log_file=$1
+    local log_file=$1
 
-	(head -1 $log_file
-	tail -100 $log_file | egrep '(Number of files transferred|Total transferred file size)'
-	tail -1 $log_file) |
-	sed 's/\[[^]]*\] //; s/Number of files transferred:/Files /; s/Total transferred file size:/Size  /'
+    (head -1 $log_file
+    tail -100 $log_file | egrep '(Number of files transferred|Total transferred file size)'
+    tail -1 $log_file) |
+    sed 's/\[[^]]*\] //; s/Number of files transferred:/Files /; s/Total transferred file size:/Size  /'
 }
 
 #rename qsplit buckets
 function fix_buckets () {
-	local func_name=${FUNCNAME[0]}
+    local func_name=${FUNCNAME[0]}
 
-	if (( $# != 1 )); then
-		echo "Usage: $func_name <new bucket prefix>"
-		return 1
-	fi
-	
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <new bucket prefix>"
+        return 1
+    fi
+    
 
-	if [ ! -f qsync_* ]; then 
-		echo "Usage: $func_name <new bucket prefix> (must be run in a directory with qsplit buckets)"
-		echo "Error: No bucket files found"
-		return 1
-	fi
-	
-	local bucket
+    if [ ! -f qsync_* ]; then
+        echo "Usage: $func_name <new bucket prefix> (must be run in a directory with qsplit buckets)"
+        echo "Error: No bucket files found"
+        return 1
+    fi
+    
+    local bucket
 
-	for bucket in `ls qsync*bucket*`; do
-		local bucket_id=`echo $bucket | sed "s/qsync_[0-9_]*\.bucket_\([0-9]*\)/\1/"`
-		#bucket_id=`printf "%02d" $bucket_id`
-		mv -v $bucket ${1}_bucket_$bucket_id
-	done
+    for bucket in `ls qsync*bucket*`; do
+        local bucket_id=`echo $bucket | sed "s/qsync_[0-9_]*\.bucket_\([0-9]*\)/\1/"`
+        #bucket_id=`printf "%02d" $bucket_id`
+        mv -v $bucket ${1}_bucket_$bucket_id
+    done
 
-	echo "Updating bucket timestamps"
+    echo "Updating bucket timestamps"
 
-	# timestamp the buckets to match order
-	for bucket in `ls ${1}_bucket*`; do
-		touch $bucket
-		sleep 0.01
-	done
+    # timestamp the buckets to match order
+    for bucket in `ls ${1}_bucket*`; do
+        touch $bucket
+        sleep 0.01
+    done
 }
 
 #check if a cluster node is configured
 function check_node () {
-	local node=$1
+    local node=$1
 
-	local QUEUE="all.q"
-	local HOST_GROUP="@allhosts"
+    local QUEUE="all.q"
+    local HOST_GROUP="@allhosts"
 
-	local admin=`qconf -sh | grep $node`
-	local exec=`qconf -sel | grep $node`
-	local submit=`qconf -ss | grep $node`
-	local host_grp=`qconf -shgrp $HOST_GROUP | grep $node | sed 's/^ *//'`
-	local queue=`qconf -sq $QUEUE | grep $node`
+    local admin=`qconf -sh | grep $node`
+    local exec=`qconf -sel | grep $node`
+    local submit=`qconf -ss | grep $node`
+    local host_grp=`qconf -shgrp $HOST_GROUP | grep $node | sed 's/^ *//'`
+    local queue=`qconf -sq $QUEUE | grep $node`
 
-	printf "%-12s: %s\n" "admin host" $admin
-	printf "%-12s: %s\n" "exec host" $exec
-	printf "%-12s: %s\n" "submit host" $submit
-	printf "%-12s: %s\n" "host group" "$host_grp"
-	printf "%-12s: %s\n" "queue" $queue
+    printf "%-12s: %s\n" "admin host" $admin
+    printf "%-12s: %s\n" "exec host" $exec
+    printf "%-12s: %s\n" "submit host" $submit
+    printf "%-12s: %s\n" "host group" "$host_grp"
+    printf "%-12s: %s\n" "queue" $queue
 }
 
 #list all snapshots and their sizes
 function qq_snaps () {
-	local func_name=${FUNCNAME[0]}
+    local func_name=${FUNCNAME[0]}
 
-	if (( $# != 1 )); then
-		echo "Usage: $func_name <qumulo cluster name>"
-		return 1
-	fi
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <qumulo cluster name>"
+        return 1
+    fi
 
     local cluster=$1
 
@@ -540,51 +540,6 @@ function qhjobs () {
 
 }
 
-#disable a node
-#function d-node () {
-#    local func_name=${FUNCNAME[0]}
-#    # need to keep OPTIND inside the function
-#    local OPTIND
-#
-#    if ! which qmod > /dev/null; then
-#        echo "$func_name: no 'qmod' in path. Is this a cluster node?"
-#        return 10
-#    fi
-#
-#    echo $@
-#
-#    if (( $# > 3 )); then
-#        $@+=("PRINT_USAGE")
-#    fi
-#
-#    echo $@
-#
-#    while getopts m: option; do
-#        case "$option" in
-#            m) message=$OPTARG ;;
-#            *) echo "Usage: $func_name -m <message> [node_name]"
-#               echo
-#               echo "  node_name  optional (default: current host)"
-#               echo "  message    reason for disabling (single string)"
-#               return 1 ;;
-#         esac
-#    done
-#
-#    echo $#
-#    echo $OPTIND
-#
-#    echo "message: $message"
-#    return
-#
-#    if (( $# == 0 )); then
-#        node=`hostname -s`
-#    else
-#        node=$1
-#    fi
-#
-#    qhost -j -h $node
-#}
-#
 #wrapper around Qumulo agg_tree_diff
 function qq_diff () {
     local func_name=${FUNCNAME[0]}
@@ -634,7 +589,7 @@ function scsh () {
 }
 
 #list all nodes restricted to projects
-function qordon () {
+function qordons () {
     for line in $(qstat -f | grep '@' | awk -F'(@| *)' '{printf "%3s,%s\n", gensub(".*/","","",$4), gensub("\\..*","","",$2)}'); do
         node=`echo $line | cut -d, -f2`
         slots=`echo $line | cut -d, -f1`
@@ -643,4 +598,140 @@ function qordon () {
             printf "%3s %-12s %s\n" $slots $node "$qconf_output"
         fi
     done | sort -k3
+}
+
+#show queues (nodes) in bad states with UGE's messages
+function qexplain () {
+    # ignores a list of queues unless -v is specified
+
+    # states to explain
+    local TO_EXPLAIN='aAcEm'
+
+    # queues to ignore
+    local EXCLUDE_QUEUES='test.q geospatial-test.q'
+
+    local qstat_explain
+
+    if [[ $1 == "-v" ]]; then
+        # grab it all
+        qstat_explain=$(qstat -f -explain $TO_EXPLAIN)
+    else
+        # assemble an UGE wildcard string to exclude queues
+        local queue_wildcard=$(echo "$EXCLUDE_QUEUES" |
+                                sed 's/.*/!(&)/' |
+                                tr ' ' '|')
+        # exclude some queues
+        qstat_explain=$(qstat -f -q "$queue_wildcard" -explain $TO_EXPLAIN)
+    fi
+
+    echo "$qstat_explain" |
+    uniq |
+    # grab lines with colons and line before them
+    # this will grab multiple message lines
+    egrep --no-group-separator -B1 ':' |
+    awk '/^[^    ]/ { print $1, $6; next } { print }' |
+    # make admin msgs stand out
+    grep -e '$' -e '.*admin msg:.*'
+}
+
+#show all bad nodes
+function qbad () {
+    # ignores a list of queues unless -v is specified
+
+    # queues to ignore
+    local EXCLUDE_QUEUES='test.q geospatial-test.q'
+    # all UGE states
+    local ALL_STATES='acdosuACDES'
+
+    local qstat_output
+
+    if [[ $1 == "-v" ]]; then
+        # grab it all
+        qstat_output=$(qstat -f)
+    else
+        # assemble an UGE wildcard string to exclude queues
+        local queue_wildcard=$(echo "$EXCLUDE_QUEUES" |
+                                sed 's/.*/!(&)/' |
+                                tr ' ' '|')
+        # exclude some queues
+        qstat_output=$(qstat -f -q "$queue_wildcard")
+    fi
+
+    echo "$qstat_output" |
+    # show only nodes with something in the last column
+    awk "{if (NF > 5) print}" |
+    # highlight the node we're on and any states which include a "d"
+    # (can't highlight only the "d" because egrep has no lookahead)
+    egrep -e '$' -e ".*$(hostname -s).*" -e "[${ALL_STATES}]*d[${ALL_STATES}]*$"
+}
+
+# disable a cluster node cleanly
+function d-node () {
+    # Disable all the queue instances on a cluster node
+    #   - Must be run on an admin host
+    #   - Requires admin privileges for the targeted queue(s)
+    #
+    #   - defaults to current host as the target node
+    #   - tag the node with a message
+    #   - timestamps and signs the message
+    #   - shows result of the change
+
+    local func_name=${FUNCNAME[0]}
+
+    # try to check whether this is a cluster node
+    if ! which qmod > /dev/null; then
+        echo "$func_name: no 'qmod' in path. Is this a cluster node?"
+        return 10
+    fi
+
+    # try to determine the actual user
+    user=`who am i | cut -d' ' -f1`
+
+    # if logged in as root, prompt for a username to put in the message
+    if [[ $user == "root" ]]; then
+        read -p "Running as root. Please provide your username: " user
+    fi
+
+    # confirm we have a valid username
+    if ! getent passwd $user > /dev/null; then
+        echo "Invalid username: $user"
+        return 11
+    fi
+
+    # check the first argument
+    if getent hosts $1 > /dev/null; then
+        # if it's a hostname, use it as the node
+        local node=$1
+        # remove the first argument
+        shift
+    else
+        # if it's not a hostname, use the current host as the node
+        local node=$(hostname -s)
+    fi
+
+    # need at least one argument: a message
+    if (( $# == 0 )); then
+        echo "Usage: $func_name [node_name] <message>"
+        echo
+        echo "  node_name  optional (default: current host)"
+        echo "  message    reason for disabling"
+        echo
+        echo "Disables all queue instance on a node"
+        echo "(Overwrites existing messages on nodes)"
+        return 1
+    fi
+
+    # the rest of the arguments are the message
+    local timestamp=$(date +'%D %T')
+    local message="$user: $@ ($timestamp)"
+
+    # disable the node with the message
+    qmod -d "*@$node" -msg "$message"
+    echo
+    # from "line with node" until "line with dashes" print "lines without dashes"
+    # because we don't want to print the trailing line of dashes
+    qstat -f -explain m |
+    awk -v node=$node '$1 ~ node, /^---/ {if ($0 !~ "^---") {print}}' |
+    # highlight output to match qexplain
+    egrep -e '$' -e 'admin msg:'
 }
