@@ -2,12 +2,9 @@
 # UGE Cluster
 #
 
-alias qbad='qstat -f | awk "{if (NF > 5) print}" | egrep "(.*`hostname -s`.*|$)"'
 alias qslots='qstat -g c'
 alias qerr='qstat -qs E -f -explain E | awk "/^---*$/ { print \"\"; next} /^queuename/ { print \"\$1, \$6, error job node\"; next } /^[^ ]*@/ { node_info=\"$1 - $6\"; next } { print node_info $0 }" | sed "s/\.ihme\.wash.[^ ]*//g; s/\t*queue [^ ]* marked / - /; s/ as result of / - /; s/.s failure at host / - on /"'
 alias qqlogins='qstat -u \* | egrep "(QLOGIN|qlogins@)" | sort -k4 | awk "{ if (\$9 >= 10 && \$5 == \"r\") printf \"%d %-8s %10s %8s %s %d\n\", \$1, \$4, \$6, \$7, \$8, \$9, \$NF}"'
-alias qexplain='qstat -explain aAcEm | uniq | egrep --no-group-separator -B1 ":" | grep -e "$" -e ".*admin msg:.*"'
-
 
 alias chex='df | egrep -w "(cod|codem|hospital|mortality)" | tr ":" " "; sudo automount -m | egrep -w "(cod|codem|hospital|mortality)" | grep -v chagas'
 
