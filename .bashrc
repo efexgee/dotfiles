@@ -198,7 +198,6 @@ fi
 
 # only on the desktop VM
 if [ -d $HOME/pass ]; then
-    echo Found $HOME/pass
     export PASSWORD_STORE_DIR=$HOME/pass
 fi
 
@@ -206,3 +205,12 @@ fi
 if [ -d $HOME/bin/miniconda3/bin:$PATH ]; then
     export PATH="/home/falko/bin/miniconda3/bin:$PATH"
 fi
+
+# source functions and aliases from other files
+SOURCE_FILES='$HOME'
+for dotfile in .cluster_src .qumulo_src .salt_src .stornext_src .rsync_src .reporting_src; do
+    file="${SOURCE_FILES}/${dotfile}"
+    if [[ -f $file ]]; then
+        . $file
+    fi
+done
