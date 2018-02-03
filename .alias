@@ -1,26 +1,3 @@
-#
-# Qumulo Aliases
-# 
-
-#append NFS server name to end of df output
-alias qq_df="df -PT | awk '{if (\$2 == \"nfs\") { \"host \`echo \"\$1\" | cut -d: -f1\` | grep -o '[[:alpha:]]*-fs' \" | getline nfs_server; print \$0 \" (\"nfs_server\")\"} else {print}}'"
-
-#run qq against one of the clusters
-alias qqb="qq --credentials-store ~/.qfsd_cred.blah-fs --host blah-fs"
-alias qqf="qq --credentials-store ~/.qfsd_cred.fast-fs --host fast-fs"
-alias qqd="qq --credentials-store ~/.qfsd_cred.dengue-fs --host dengue-fs"
-alias qqc="qq --credentials-store ~/.qfsd_cred.chagas-fs --host chagas-fs"
-
-#login to a cluster
-alias qqlb="qql blah"
-alias qqlf="qql fast"
-alias qqld="qql dengue"
-alias qqlc="qql chagas"
-alias qqab="qqla blah"
-alias qqaf="qqla fast"
-alias qqad="qqla dengue"
-alias qqac="qqla chagas"
-
 #migration
 alias bfsplit='qfsplit --host blah-fs --credentials-store ~/.qfsd_cred.blah-fs'
 alias ex-sync='rsync_maker.py blah-fs chagas-fs --delete -x excludes'
