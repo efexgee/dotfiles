@@ -1,17 +1,4 @@
 #
-# UGE Cluster
-#
-
-alias qslots='qstat -g c'
-alias qerr='qstat -qs E -f -explain E | awk "/^---*$/ { print \"\"; next} /^queuename/ { print \"\$1, \$6, error job node\"; next } /^[^ ]*@/ { node_info=\"$1 - $6\"; next } { print node_info $0 }" | sed "s/\.ihme\.wash.[^ ]*//g; s/\t*queue [^ ]* marked / - /; s/ as result of / - /; s/.s failure at host / - on /"'
-alias qqlogins='qstat -u \* | egrep "(QLOGIN|qlogins@)" | sort -k4 | awk "{ if (\$9 >= 10 && \$5 == \"r\") printf \"%d %-8s %10s %8s %s %d\n\", \$1, \$4, \$6, \$7, \$8, \$9, \$NF}"'
-
-alias chex='df | egrep -w "(cod|codem|hospital|mortality)" | tr ":" " "; sudo automount -m | egrep -w "(cod|codem|hospital|mortality)" | grep -v chagas'
-
-#redirect qconf help to STDOUT and grep for the arg
-alias qwhat='qconf -help 2>&1 | grep'
-
-#
 # Qumulo Aliases
 # 
 
