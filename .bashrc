@@ -13,12 +13,6 @@ if [ -f /etc/bashrc ]; then
     . /etc/bashrc
 fi
 
-# for qumulo-dashboard-p01
-# add the paths under root homedir
-if [ -f $HOME/.qumulo-paths ]; then
-    . $HOME/.qumulo-paths
-fi
-
 # Use bash-completion, if available
 [[ $PS1 && -f /usr/share/bash-completion/bash_completion ]] && \
     . /usr/share/bash-completion/bash_completion
@@ -207,10 +201,12 @@ if [ -d $HOME/bin/miniconda3/bin:$PATH ]; then
 fi
 
 # source functions and aliases from other files
-SOURCE_FILES='$HOME'
+SOURCE_FILES="$HOME/.dotfiles"
 for dotfile in .cluster_src .qumulo_src .salt_src .stornext_src .rsync_src .reporting_src; do
     file="${SOURCE_FILES}/${dotfile}"
+
     if [[ -f $file ]]; then
+        echo "Sourcing $file"
         . $file
     fi
 done
