@@ -22,28 +22,6 @@ buckets () {
     echo "Printed $1: lines $start - $(($start + $number - 1))"
 }
 
-#print summary of all rsyncs' status
-rsync_report () {
-    finished=0
-    output=`for log_file in \`ls -1 *.log\`; do
-        tail=\`tail -1 $log_file\`
-        if ! echo $tail | grep sent > /dev/null; then
-            lines=\`wc -l $log_file | cut -d\  -f1\`
-        else
-            lines="?"
-        fi
-        label=${log_file/.log/}
-        printf "%s %8s : $tail\n" $label $lines
-        done`
-    echo "$output" | egrep -v "(] sent |rsync error)" | cut -c1-`tput cols`
-    building=`echo "$output" | grep -c "building file list"`
-    error=`echo "$output" | grep -c "rsync error"`
-    finished=`echo "$output" | grep -c "] sent"`
-    echo
-    other=$(( `echo "$output" | wc -l` - $finished - $building - $error ))
-    printf "Building: %3d\nError: %6d\nOther: %6d\nComplete: %3d\n" $building $error $other $finished
-}
-
 function githubbify () {
     #requires:
     #    user definition in .ssh/config
@@ -107,17 +85,6 @@ function bbify () {
     echo "Done."
 }
 
-
-#list all running rsyncs, deriving a label from the logfile name
-function rsync_ps () {
-    if [ "$1" = "-u" ]; then
-        #ps h -C rsync k -etime -o etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k4 | uniq -s 47
-        ps h -C rsync k -etime -o etime,tty,args | sed "s#pts/##; s/ *rsync .*--log-file \([^ ]*\)\.log .*/ \1/" | sort -k3 | uniq -s 14 | sed 's/ \([0-9]\) /  \1 /'
-    else
-        ps h -C rsync k -s,-etime -o s,etime,tty,wchan:23,args | sed "s/rsync .*--log-file \([^ ]*\)\.log .*/\1/" | sort -k5 | egrep "(^[RT]|$)"
-    fi
-}
-
 #list all running tars, deriving a label from the archive name
 function tar_ps () {
     ps h -C tar k -etime -o etime,tty,args | sed "s#pts/##; s/ *tar .* \([^ ]*\)\.tar .*/ \1/" | sort -k3 | uniq -s 14 | sed 's/ \([0-9]\) /  \1 /'
@@ -130,23 +97,6 @@ function rm_ps () {
     else
         ps h -C rm k -s,-etime -o s,etime,tty,wchan:23,args | sort -k5 | egrep "(^[RT]|$)"
     fi
-}
-
-#condense rsync log
-function rsync_log () {
-        local func_name=${FUNCNAME[0]}
-
-    if (( $# != 1 )); then
-        echo "Usage: $func_name <rsync log file>"
-        return 1
-    fi
-
-    local log_file=$1
-
-    (head -1 $log_file
-    tail -100 $log_file | egrep '(Number of files transferred|Total transferred file size)'
-    tail -1 $log_file) |
-    sed 's/\[[^]]*\] //; s/Number of files transferred:/Files /; s/Total transferred file size:/Size  /'
 }
 
 #rename qsplit buckets
@@ -182,7 +132,6 @@ function fix_buckets () {
     done
 }
 
-#search UGE project-related configurations
 #ssh and name your screen window for that host
 function scsh () {
     local func_name=${FUNCNAME[0]}
