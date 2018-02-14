@@ -590,12 +590,12 @@ function scsh () {
 
 #list all nodes restricted to projects
 function qordons () {
-    for line in $(qstat -f | grep '@' | awk -F'(@| *)' '{printf "%3s,%s\n", gensub(".*/","","",$4), gensub("\\..*","","",$2)}'); do
+    for line in $(qstat -f | grep '@' | awk -F'(@| *)' '{printf "%3s,%s\n", gensub("[^/]*/","","",$4), gensub("\\..*","","",$2)}'); do
         node=`echo $line | cut -d, -f2`
         slots=`echo $line | cut -d, -f1`
         qconf_output=`qconf -se $node | grep '^projects *proj' | tr -s ' ' | sed 's/^projects //'`
         if [[ -n $qconf_output ]]; then
-            printf "%3s %-12s %s\n" $slots $node "$qconf_output"
+            printf "%7s %-12s %s\n" $slots $node "$qconf_output"
         fi
     done | sort -k3
 }
@@ -629,9 +629,9 @@ function qexplain () {
     # grab lines with colons and line before them
     # this will grab multiple message lines
     egrep --no-group-separator -B1 ':' |
-    awk '/^[^    ]/ { print $1, $6; next } { print }' |
+    awk '/^[^\t]/ { print $1, $6; next } { print }' |
     # make admin msgs stand out
-    grep -e '$' -e '.*admin msg:.*'
+    egrep -e '$' -e '.*admin msg:.*'
 }
 
 #show all bad nodes
