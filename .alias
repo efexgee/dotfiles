@@ -1,39 +1,3 @@
-#
-# UGE Cluster
-#
-
-alias qslots='qstat -g c'
-alias qerr='qstat -qs E -f -explain E | awk "/^---*$/ { print \"\"; next} /^queuename/ { print \"\$1, \$6, error job node\"; next } /^[^ ]*@/ { node_info=\"$1 - $6\"; next } { print node_info $0 }" | sed "s/\.ihme\.wash.[^ ]*//g; s/\t*queue [^ ]* marked / - /; s/ as result of / - /; s/.s failure at host / - on /"'
-alias qqlogins='qstat -u \* | egrep "(QLOGIN|qlogins@)" | sort -k4 | awk "{ if (\$9 >= 10 && \$5 == \"r\") printf \"%d %-8s %10s %8s %s %d\n\", \$1, \$4, \$6, \$7, \$8, \$9, \$NF}"'
-
-alias chex='df | egrep -w "(cod|codem|hospital|mortality)" | tr ":" " "; sudo automount -m | egrep -w "(cod|codem|hospital|mortality)" | grep -v chagas'
-
-#redirect qconf help to STDOUT and grep for the arg
-alias qwhat='qconf -help 2>&1 | grep'
-
-#
-# Qumulo Aliases
-# 
-
-#append NFS server name to end of df output
-alias qq_df="df -PT | awk '{if (\$2 == \"nfs\") { \"host \`echo \"\$1\" | cut -d: -f1\` | grep -o '[[:alpha:]]*-fs' \" | getline nfs_server; print \$0 \" (\"nfs_server\")\"} else {print}}'"
-
-#run qq against one of the clusters
-alias qqb="qq --credentials-store ~/.qfsd_cred.blah-fs --host blah-fs"
-alias qqf="qq --credentials-store ~/.qfsd_cred.fast-fs --host fast-fs"
-alias qqd="qq --credentials-store ~/.qfsd_cred.dengue-fs --host dengue-fs"
-alias qqc="qq --credentials-store ~/.qfsd_cred.chagas-fs --host chagas-fs"
-
-#login to a cluster
-alias qqlb="qql blah"
-alias qqlf="qql fast"
-alias qqld="qql dengue"
-alias qqlc="qql chagas"
-alias qqab="qqla blah"
-alias qqaf="qqla fast"
-alias qqad="qqla dengue"
-alias qqac="qqla chagas"
-
 #migration
 alias bfsplit='qfsplit --host blah-fs --credentials-store ~/.qfsd_cred.blah-fs'
 alias ex-sync='rsync_maker.py blah-fs chagas-fs --delete -x excludes'
@@ -41,6 +5,7 @@ alias ex-sync='rsync_maker.py blah-fs chagas-fs --delete -x excludes'
 #
 # General
 #
+alias sanity='sudo /usr/local/bin/sanity_check.sh'
 
 alias fill='cut -c1-`tput cols`'
 alias fun='typeset -f'
