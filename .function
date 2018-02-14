@@ -149,7 +149,6 @@ function scsh () {
 
     ssh $host
 }
-<<<<<<< HEAD
 
 #list all nodes restricted to projects
 function qordons () {
