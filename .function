@@ -297,3 +297,10 @@ function d-node () {
     # highlight output to match qexplain
     egrep -e '$' -e 'admin msg:'
 }
+
+# display what permissions and ownership new files will have
+function whatami () {
+    local default_perms=$(umask -S | sed 's/[ugo]=\(r*\)\(w*\)\(x*\)/@\1@#\2#%\3%/g' | sed 's/\(.\)\1/-/g' | tr -d  ',@#%')
+    local effective_group=$(id -gn)
+    echo "$default_perms $USER:$effective_group"
+}
