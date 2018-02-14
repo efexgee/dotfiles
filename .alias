@@ -5,6 +5,7 @@ alias ex-sync='rsync_maker.py blah-fs chagas-fs --delete -x excludes'
 #
 # General
 #
+alias sanity='sudo /usr/local/bin/sanity_check.sh'
 
 alias fill='cut -c1-`tput cols`'
 alias fun='typeset -f'
