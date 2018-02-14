@@ -297,5 +297,3 @@ function d-node () {
     # highlight output to match qexplain
     egrep -e '$' -e 'admin msg:'
 }
-=======
->>>>>>> df7b46ab61cfd54bc0b56d6b443b17b09a1249ef
