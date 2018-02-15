@@ -8,6 +8,22 @@ case $- in
       *) return;;
 esac
 
+# elevated UIDs and GIDs
+ADMIN_UID=700718        # my admin account
+ADMIN_GROUP="IHME-SA"   # admin account effective group
+
+# try to set effective group
+if (( `id -u` == $ADMIN_UID )) && [[ `id -gn` != $ADMIN_GROUP ]]; then
+    exec newgrp $ADMIN_GROUP
+fi
+
+# Who/what am I
+default_perms=$(umask -S | sed 's/[ugo]=\(r*\)\(w*\)\(x*\)/@\1@#\2#%\3%/g' | sed 's/\(.\)\1/-/g' | tr -d  ',@#%')
+effective_group=$(id -gn)
+echo
+echo "$default_perms $USER:$effective_group"
+echo
+
 # source /etc/bashrc before interactive check for ssh -t cluster-dev qlogin
 if [ -f /etc/bashrc ]; then
     . /etc/bashrc
@@ -95,7 +111,7 @@ fi
 #FXG check to see if we're root
 
 if [ "$color_prompt" = yes ]; then
-    if [ $(id -u) == 0 ]; then
+    if (( $(id -u) == 0 || $(id -u) == $ADMIN_UID )); then
         #"root" prompt colors username red and replaces $ with a red #
         PS1='\n\T \[\e[91m\]\u\[\e[32m\]@\h:\[\e[33m\]\w\[\e[91m\]#\[\e[0m\] '
         echo "Remember: \"With root power comes root responsibility.\""

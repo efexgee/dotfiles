@@ -149,3 +149,158 @@ function scsh () {
 
     ssh $host
 }
+
+#list all nodes restricted to projects
+function qordons () {
+    for line in $(qstat -f | grep '@' | awk -F'(@| *)' '{printf "%3s,%s\n", gensub("[^/]*/","","",$4), gensub("\\..*","","",$2)}'); do
+        node=`echo $line | cut -d, -f2`
+        slots=`echo $line | cut -d, -f1`
+        qconf_output=`qconf -se $node | grep '^projects *proj' | tr -s ' ' | sed 's/^projects //'`
+        if [[ -n $qconf_output ]]; then
+            printf "%7s %-12s %s\n" $slots $node "$qconf_output"
+        fi
+    done | sort -k3
+}
+
+#show queues (nodes) in bad states with UGE's messages
+function qexplain () {
+    # ignores a list of queues unless -v is specified
+
+    # states to explain
+    local TO_EXPLAIN='aAcEm'
+
+    # queues to ignore
+    local EXCLUDE_QUEUES='test.q geospatial-test.q'
+
+    local qstat_explain
+
+    if [[ $1 == "-v" ]]; then
+        # grab it all
+        qstat_explain=$(qstat -f -explain $TO_EXPLAIN)
+    else
+        # assemble an UGE wildcard string to exclude queues
+        local queue_wildcard=$(echo "$EXCLUDE_QUEUES" |
+                                sed 's/.*/!(&)/' |
+                                tr ' ' '|')
+        # exclude some queues
+        qstat_explain=$(qstat -f -q "$queue_wildcard" -explain $TO_EXPLAIN)
+    fi
+
+    echo "$qstat_explain" |
+    uniq |
+    # grab lines with colons and line before them
+    # this will grab multiple message lines
+    egrep --no-group-separator -B1 ':' |
+    awk '/^[^\t]/ { print $1, $6; next } { print }' |
+    # make admin msgs stand out
+    egrep -e '$' -e '.*admin msg:.*'
+}
+
+#show all bad nodes
+function qbad () {
+    # ignores a list of queues unless -v is specified
+
+    # queues to ignore
+    local EXCLUDE_QUEUES='test.q geospatial-test.q'
+    # all UGE states
+    local ALL_STATES='acdosuACDES'
+
+    local qstat_output
+
+    if [[ $1 == "-v" ]]; then
+        # grab it all
+        qstat_output=$(qstat -f)
+    else
+        # assemble an UGE wildcard string to exclude queues
+        local queue_wildcard=$(echo "$EXCLUDE_QUEUES" |
+                                sed 's/.*/!(&)/' |
+                                tr ' ' '|')
+        # exclude some queues
+        qstat_output=$(qstat -f -q "$queue_wildcard")
+    fi
+
+    echo "$qstat_output" |
+    # show only nodes with something in the last column
+    awk "{if (NF > 5) print}" |
+    # highlight the node we're on and any states which include a "d"
+    # (can't highlight only the "d" because egrep has no lookahead)
+    egrep -e '$' -e ".*$(hostname -s).*" -e "[${ALL_STATES}]*d[${ALL_STATES}]*$"
+}
+
+# disable a cluster node cleanly
+function d-node () {
+    # Disable all the queue instances on a cluster node
+    #   - Must be run on an admin host
+    #   - Requires admin privileges for the targeted queue(s)
+    #
+    #   - defaults to current host as the target node
+    #   - tag the node with a message
+    #   - timestamps and signs the message
+    #   - shows result of the change
+
+    local func_name=${FUNCNAME[0]}
+
+    # try to check whether this is a cluster node
+    if ! which qmod > /dev/null; then
+        echo "$func_name: no 'qmod' in path. Is this a cluster node?"
+        return 10
+    fi
+
+    # try to determine the actual user
+    user=`who am i | cut -d' ' -f1`
+
+    # if logged in as root, prompt for a username to put in the message
+    if [[ $user == "root" ]]; then
+        read -p "Running as root. Please provide your username: " user
+    fi
+
+    # confirm we have a valid username
+    if ! getent passwd $user > /dev/null; then
+        echo "Invalid username: $user"
+        return 11
+    fi
+
+    # check the first argument
+    if getent hosts $1 > /dev/null; then
+        # if it's a hostname, use it as the node
+        local node=$1
+        # remove the first argument
+        shift
+    else
+        # if it's not a hostname, use the current host as the node
+        local node=$(hostname -s)
+    fi
+
+    # need at least one argument: a message
+    if (( $# == 0 )); then
+        echo "Usage: $func_name [node_name] <message>"
+        echo
+        echo "  node_name  optional (default: current host)"
+        echo "  message    reason for disabling"
+        echo
+        echo "Disables all queue instance on a node"
+        echo "(Overwrites existing messages on nodes)"
+        return 1
+    fi
+
+    # the rest of the arguments are the message
+    local timestamp=$(date +'%D %T')
+    local message="$user: $@ ($timestamp)"
+
+    # disable the node with the message
+    qmod -d "*@$node" -msg "$message"
+    echo
+    # from "line with node" until "line with dashes" print "lines without dashes"
+    # because we don't want to print the trailing line of dashes
+    qstat -f -explain m |
+    awk -v node=$node '$1 ~ node, /^---/ {if ($0 !~ "^---") {print}}' |
+    # highlight output to match qexplain
+    egrep -e '$' -e 'admin msg:'
+}
+
+# display what permissions and ownership new files will have
+function whatami () {
+    local default_perms=$(umask -S | sed 's/[ugo]=\(r*\)\(w*\)\(x*\)/@\1@#\2#%\3%/g' | sed 's/\(.\)\1/-/g' | tr -d  ',@#%')
+    local effective_group=$(id -gn)
+    echo "$default_perms $USER:$effective_group"
+}
