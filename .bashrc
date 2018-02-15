@@ -196,7 +196,7 @@ if [ -d $HOME/pass ]; then
 fi
 
 # added by Miniconda3 4.3.11 installer
-if [ -d $HOME/bin/miniconda3/bin:$PATH ]; then
+if [ -d $HOME/bin/miniconda3/bin ]; then
     export PATH="/home/falko/bin/miniconda3/bin:$PATH"
 fi
 
