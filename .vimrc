@@ -6,3 +6,6 @@ set tabstop=4
 set expandtab		"type tabs as spaces
 set shiftwidth=4	"what an indent is
 set softtabstop=4
+
+"disable macro recording
+map q <Nop>
