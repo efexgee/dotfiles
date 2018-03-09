@@ -304,3 +304,15 @@ function whatami () {
     local effective_group=$(id -gn)
     echo "$default_perms $USER:$effective_group"
 }
+
+# sum a column of numbers
+function total () {
+    if (( $# != 1 )); then
+        echo "Usage: total <column>"
+        exit 1
+    fi
+
+    local col=$1
+
+    awk -v col=$col '{ tot += $col } END { print tot }'
+}
