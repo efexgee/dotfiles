@@ -8,13 +8,20 @@ case $- in
       *) return;;
 esac
 
+DEFAULT_GROUP="Domain Users"
 # elevated UIDs and GIDs
 ADMIN_UID=700718        # my admin account
 ADMIN_GROUP="IHME-SA"   # admin account effective group
 
 # try to set effective group
-if (( `id -u` == $ADMIN_UID )) && [[ `id -gn` != $ADMIN_GROUP ]]; then
-    exec newgrp $ADMIN_GROUP
+#if (( `id -u` == $ADMIN_UID )) && [[ `id -gn` != $ADMIN_GROUP ]]; then
+if (( `id -u` == $ADMIN_UID )); then
+    # don't overwrite effective group if already newgrp'd to something else
+    if [[ `id -gn` = $DEFAULT_GROUP ]]; then
+        exec newgrp $ADMIN_GROUP
+    else
+        echo "Accepting existing non-default group"
+    fi
 fi
 
 # Who/what am I
