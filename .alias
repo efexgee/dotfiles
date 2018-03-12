@@ -15,6 +15,10 @@ alias nf='awk "{print \$NF}"'
 alias stamp='date +"%Y%m%d_%H%M%S"'
 alias h_stamp='date +"%D %T"'
 
+# make PHP logs sane
+# Elder Backslash!
+alias de-PHP='tr -s "\\\\" | sed "s#\\\n#\\n#g; s#\\\/#/#g; s#\\\\\"#\\\"#g" | egrep -e $ -e "([]:(){}\","'\\\''"[]|->)"'
+
 #create a tombstoning directory for staged deletions
 alias tombstone='sudo mkdir TO_BE_DELETED && sudo chgrp IHME-SA TO_BE_DELETED && sudo touch TO_BE_DELETED/timestamp.`date +"%s"`'
 
