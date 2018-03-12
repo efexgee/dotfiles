@@ -8,13 +8,24 @@ case $- in
       *) return;;
 esac
 
-# elevated UIDs and GIDs
-ADMIN_UID=700718        # my admin account
-ADMIN_GROUP="IHME-SA"   # admin account effective group
+# UIDs and GIDs
+DEFAULT_GROUP="Domain Users" # IHME default group
+INFR_GROUP="ihme-infr"       # my normal effective group
+ADMIN_UID=700718             # my admin account
+ADMIN_GROUP="IHME-SA"        # admin account effective group
+
+# Determine which effective group to use
+effective_group="$INFR_GROUP"
+if (( `id -u` == $ADMIN_UID )); then
+    effective_group="$ADMIN_GROUP"
+fi
 
 # try to set effective group
-if (( `id -u` == $ADMIN_UID )) && [[ `id -gn` != $ADMIN_GROUP ]]; then
-    exec newgrp $ADMIN_GROUP
+# don't overwrite effective group if already newgrp'd to something else
+if [[ `id -gn` = $DEFAULT_GROUP ]]; then
+    exec newgrp $effective_group
+else
+    echo "Accepting existing non-default group"
 fi
 
 # Who/what am I
@@ -223,9 +234,7 @@ fi
 SOURCE_FILES="$HOME/.dotfiles"
 for dotfile in .cluster_src .qumulo_src .salt_src .stornext_src .rsync_src .reporting_src; do
     file="${SOURCE_FILES}/${dotfile}"
-
     if [[ -f $file ]]; then
-        echo "Sourcing $file"
         . $file
     fi
 done
