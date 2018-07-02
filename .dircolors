@@ -1,1 +1,125 @@
-../.ihme_dotfiles/.dircolors
+#FXG: This file is read in .bashrc via the lines:
+#FXG: eval "`dircolors -b`"
+#FXG: eval "`dircolors -b .dircolors | sed 's/^LS_COLORS=/LS_COLORS=$LS_COLORS:/'`"
+#
+#FXG: Syntax: .ext 01;37;45
+#	-doesn't have to be in order
+#	-"attribute codes" stack (04:07 is ok)
+#
+#FXG: Files can't be in two categories and precedence is undocumented
+#FXG: 	Example: an executble file with 2 links will only render as an executable
+
+# Attribute codes:
+# 00=none 01=bold 04=underscore 07=reverse
+#FXG: 03=italic
+#
+# Text color codes:
+# 30=black 31=red 32=green 33=yellow 34=blue 35=magenta 36=cyan 37=white
+#FXG: 90=d.grey 91=l.red 92=l.green 93=yellow 94=l.blue 95=l.purple 96=turquoise 97=white
+#
+# Background color codes:
+# 40=black 41=red 42=green 43=yellow 44=blue 45=magenta 46=cyan 47=white
+#FXG: 100=d.grey 101=l.red 102=l.green 103=yellow 104=l.blue 105=l.purple 106=turquoise
+
+# List any file extensions like '.gz' or '.tar' that you would like ls
+# to colorize below. Put the extension, a space, and the color init string.
+# (and any comments you want to add after a '#')
+
+#FXG: Make executables not so bright
+EXEC		00;32
+#FXG: Make "orphaned" symlinks really stand out
+ORPHAN		07;31
+#FXG: Underline files with link count > 1
+MULTIHARDLINK	04
+
+#FXG: Hack to color code dotfiles. LS_COLORS doesn't support this
+#FXG: so each file needs its own entry as if it were an extension
+.dircolors	00;35
+.vimrc		00;35
+#FXG: Don't care about seeing these
+.bash_history	00;90
+.viminfo	00;90
+.minttyrc	00;90
+.lesshst	00;90
+#FXG: Darken .swp files
+.swp		00;90
+#FXG: Files like .bashrc can't be colored because of the EXEC rule
+
+# If you use DOS-style suffixes, you may want to uncomment the following:
+.cmd		07;32
+.exe		07;32
+.com		07;32
+.btm		07;32
+.bat		07;32
+
+# Or if you want to colorize scripts even if they do not have the
+# executable bit actually set.
+.sh		03;32
+.csh		03;32
+.bash		03;32
+.zsh		03;32
+.ksh		03;32
+
+#FXG: MS Office files
+.doc		07;94
+.docx		07;94
+.xls		07;94
+.xlsx		07;94
+
+#FXG: Other files
+.txt		01;37
+.cfg		01;37
+.ini		01;37
+.log		01;37
+.pdf		01;37
+
+# archives or compressed (bright red)
+#FXG: I think it matches from the front, so .tar.Z doesn't match .Z
+.tar.Z		01;31
+
+# image formats
+
+# http://wiki.xiph.org/index.php/MIME_Types_and_File_Extensions
+
+# audio formats
+
+# http://wiki.xiph.org/index.php/MIME_Types_and_File_Extensions
+
+#FXG: According to:
+#FXG:	http://www.bigsoft.co.uk/blog/index.php/2008/04/11/configuring-ls_colors
+#FXG: The following are also supported by LS_COLORS (maybe not dircolors):
+#lc	LEFTCODE, LEFT		Opening terminal code
+#rc	RIGHTCODE, RIGHT	Closing terminal code
+#ec	ENDCODE, END		Non-filename text
+
+#FXG: Samples (uncomment to see the colors in vim, but will leave many entries in LS_COLORS)
+#.sample 31
+#.sample 32
+#.sample 33
+#.sample 34
+#.sample 35
+#.sample 36
+#.sample 37
+#.sample 41
+#.sample 42
+#.sample 44
+#.sample 45
+#.sample 46
+#.sample 30;41
+#.sample 30;42
+#.sample 30;43
+#.sample 30;45
+#.sample 30;46
+#.sample 30;47
+#.sample 31;43
+#.sample 32;44
+#.sample 33;41
+#.sample 34;42
+#.sample 35;46
+#.sample 36;47
+#.sample 37;45
+#.sample 00;33;41	#standard
+#.sample 01;33;41	#bold
+#.sample 03;33;41	#italic
+#.sample 04;33;41	#underline
+#.sample 07;33;41	#reversed

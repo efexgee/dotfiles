@@ -1,1 +1,50 @@
-../.ihme_dotfiles/.alias
+#migration
+alias bfsplit='qfsplit --host blah-fs --credentials-store ~/.qfsd_cred.blah-fs'
+alias ex-sync='rsync_maker.py blah-fs chagas-fs --delete -x excludes'
+
+#
+# General
+#
+#TODO sanity_check is not installed currently, using a local copy
+#alias sanity='sudo /usr/local/bin/sanity_check.sh'
+alias sanity="sudo $HOME/scripts/cluster-tools/sanity_check.sh"
+alias up_node='qmod -e "*@`hostname -s`"'
+
+alias fill='cut -c1-`tput cols`'
+alias fun='typeset -f'
+alias tail1='tail -q -n 1'
+alias nf='awk "{print \$NF}"'
+
+alias stamp='date +"%Y%m%d_%H%M%S"'
+alias h_stamp='date +"%D %T"'
+
+alias short_prompt="export PS1='\[\e[91m\]\n\T\[\e[33m\]\w\[\e[91m\]#\[\e[0m\]'"
+
+# make PHP logs sane
+# Elder Backslash!
+alias de-PHP='tr -s "\\\\" | sed "s#\\\n#\\n#g; s#\\\/#/#g; s#\\\\\"#\\\"#g" | egrep -e $ -e "([]:(){}\","'\\\''"[]|->)"'
+
+#create a tombstoning directory for staged deletions
+alias tombstone='sudo mkdir TO_BE_DELETED && sudo chgrp IHME-SA TO_BE_DELETED && sudo touch TO_BE_DELETED/timestamp.`date +"%s"`'
+
+# Conda
+alias py2='source activate py2'
+alias py3="source activate py3"
+alias deconda='source deactivate'
+
+# screen
+alias name-window-dir='screen -X title "$(printf "%2s - %s" `basename \`tty\`` `basename \`pwd\``)"'
+#alias name-window-host='screen -X title "$(printf "%2s - %s" `basename \`tty\`` `hostname -s`)"'
+
+# default command flags
+alias split='split --numeric-suffixes=01'
+alias lsblk='lsblk -o TYPE,NAME,KNAME,MAJ:MIN,MODEL,SIZE,ROTA'
+alias df='df -PT'
+alias grep='grep --color=auto -d skip'
+alias mv='mv --no-clobber'
+
+###### TEMPORARY
+#alias w='hostname -s >> rebooting.log'
+alias psusers='ps h -N -f -u root -u $(id -u) -u sgeadmin -u postfix -u haldaemon -u dbus -u rpcuser -u rpc -u ntp | egrep -w -v "(lldpd|sensu)" | sort | fill'
+alias shake_salt='sudo service salt-minion stop && pgrep salt || sudo service salt-minion start'
+alias splain='qexplain | grep -A1 `hostname -s`'
