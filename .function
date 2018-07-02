@@ -145,22 +145,23 @@ function screensh () {
     local user=$(echo $1 | cut -d@ -f1)
     local host=$(echo $1 | cut -d@ -f2 | sed 's/\..*//')
 
-    local label
+    echo "$user @ $host"
+
+    # Default label is just the hostname
+    local label="$host"
 
     # Only include username if it's different
     if [[ -n $user ]]; then
         if [[ $user != $USER ]]; then
             label="${user}@${host}"
         fi
-    else
-        label="$host"
     fi
 
     if screen -X version > /dev/null 2>&1; then
         screen -X title "$(printf "%2s - %s" $(basename $(tty)) $label)"
     fi
 
-    ssh $host
+    ssh $1
 }
 
 #list all nodes restricted to projects
