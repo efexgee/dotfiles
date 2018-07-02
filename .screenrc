@@ -1,1 +1,2 @@
-../.ihme_dotfiles/.screenrc
+# source env in new screen windows
+shell -$SHELL

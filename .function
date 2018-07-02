@@ -1,1 +1,331 @@
-../.ihme_dotfiles/.function
+#print a slice of a file, N lines long starting at line M
+buckets () {
+    # $1 : rsync command line file
+    # $2 : starting line (starting bucket number)
+    # $3 : number of lines (number of buckets)
+
+    if (( $# != 3 )); then
+        echo "Usage: $0 <rsync commands file> <number of buckets> <start bucket id>"
+        return 1
+    elif [ ! -f $1 ]; then
+        echo "File not found: $1"
+        return 2
+    fi
+
+    file=$1
+    number=$2
+    start=$3
+
+    tail -n +${start} $file | head -${number}
+
+    echo
+    echo "Printed $1: lines $start - $(($start + $number - 1))"
+}
+
+function githubbify () {
+    #requires:
+    #    user definition in .ssh/config
+    #    ssh key in .ssh
+    #    an API token for GitHub
+    #    the token defined as a git variable called github.token
+    if (( $# != 2 )); then
+        echo "Usage: $0 <repo name> <repo description>"
+        return
+    fi
+
+    local user=efexgee
+    #github.token is not a standard git field, I think
+    local gh_token=`git config github.token`
+
+    local name=$1
+    local descr=$2
+
+    local remote="gh.$name"
+
+    local curl_data='{"name":"'$name'","description":"'$descr'"}'
+
+
+    echo "Creating new repo ($remote) on GitHub..."
+    curl -u $user:$gh_token https://api.github.com/user/repos -d "$curl_data" || return 1
+
+    echo "Adding GitHub repo as a remote..."
+    git remote add $remote ssh://github.com/$user/$name || return 2
+
+    echo "Pushing local Git repo to GitHub repo..."
+    git push --set-upstream $remote master || return 3
+    echo "Done."
+}
+
+#shove an existing git repo into IHME's Bitbucket
+function bbify () {
+    #requires:
+    if (( $# != 1 )); then
+        echo "Usage: $0 <repo name>"
+        return
+    fi
+
+    local user=$USER
+    local name=$1
+
+    local URL="stash.ihme.washington.edu"
+
+    local remote="ihme.$name"
+
+    local curl_data='{"name":"'$name'","scmId":"git"}'
+    local curl_header='Content-Type: application/json'
+
+    echo "Creating new repo ($remote) on BitBucket..."
+    curl -u $user https://$URL/rest/api/1.0/users/$user/repos -H "$curl_header" -X POST -d "$curl_data" || return 1
+
+    echo "Adding BitBucket repo as a remote..."
+    git remote add $remote "ssh://git@$URL:7999/~$user/$name.git" || return 2
+
+    echo "Pushing local Git repo to BitBucket: $remote"
+    git push --set-upstream $remote master || return 3
+    echo "Done."
+}
+
+#list all running tars, deriving a label from the archive name
+function tar_ps () {
+    ps h -C tar k -etime -o etime,tty,args | sed "s#pts/##; s/ *tar .* \([^ ]*\)\.tar .*/ \1/" | sort -k3 | uniq -s 14 | sed 's/ \([0-9]\) /  \1 /'
+}
+
+#list all running rm's
+function rm_ps () {
+    if [ "$1" = "-u" ]; then
+        ps h -C rm k -etime -o etime,tty,wchan:23,args | sort -k4 | uniq -s 47
+    else
+        ps h -C rm k -s,-etime -o s,etime,tty,wchan:23,args | sort -k5 | egrep "(^[RT]|$)"
+    fi
+}
+
+#rename qsplit buckets
+function fix_buckets () {
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <new bucket prefix>"
+        return 1
+    fi
+    
+
+    if [ ! -f qsync_* ]; then
+        echo "Usage: $func_name <new bucket prefix> (must be run in a directory with qsplit buckets)"
+        echo "Error: No bucket files found"
+        return 1
+    fi
+    
+    local bucket
+
+    for bucket in `ls qsync*bucket*`; do
+        local bucket_id=`echo $bucket | sed "s/qsync_[0-9_]*\.bucket_\([0-9]*\)/\1/"`
+        #bucket_id=`printf "%02d" $bucket_id`
+        mv -v $bucket ${1}_bucket_$bucket_id
+    done
+
+    echo "Updating bucket timestamps"
+
+    # timestamp the buckets to match order
+    for bucket in `ls ${1}_bucket*`; do
+        touch $bucket
+        sleep 0.01
+    done
+}
+
+#ssh and name your screen window for that host
+function scsh () {
+    local func_name=${FUNCNAME[0]}
+
+    if ! (( $# == 1 || $# == 2)); then
+        echo "Usage: $func_name <hostname>"
+        return 1
+    fi
+
+    # Handle user@host format
+    local user=$(echo $1 | cut -d@ -f1)
+    local host=$(echo $1 | cut -d@ -f2 | sed 's/\..*//')
+
+    local label
+
+    # Only include username if it's different
+    if [[ -n $user ]]; then
+        if [[ $user != $USER ]]; then
+            label="${user}@${host}"
+        fi
+    else
+        label="$host"
+    fi
+
+    if screen -X version > /dev/null 2>&1; then
+        screen -X title "$(printf "%2s - %s" $(basename $(tty)) $label)"
+    fi
+
+    ssh $host
+}
+
+#list all nodes restricted to projects
+function qordons () {
+    for line in $(qstat -f | grep '@' | awk -F'(@| *)' '{printf "%3s,%s\n", gensub("[^/]*/","","",$4), gensub("\\..*","","",$2)}'); do
+        node=`echo $line | cut -d, -f2`
+        slots=`echo $line | cut -d, -f1`
+        qconf_output=`qconf -se $node | grep '^projects *proj' | tr -s ' ' | sed 's/^projects //'`
+        if [[ -n $qconf_output ]]; then
+            printf "%7s %-12s %s\n" $slots $node "$qconf_output"
+        fi
+    done | sort -k3
+}
+
+#show queues (nodes) in bad states with UGE's messages
+function qexplain () {
+    # ignores a list of queues unless -v is specified
+
+    # states to explain
+    local TO_EXPLAIN='aAcEm'
+
+    # queues to ignore
+    local EXCLUDE_QUEUES='test.q geospatial-test.q'
+
+    local qstat_explain
+
+    if [[ $1 == "-v" ]]; then
+        # grab it all
+        qstat_explain=$(qstat -f -explain $TO_EXPLAIN)
+    else
+        # assemble an UGE wildcard string to exclude queues
+        local queue_wildcard=$(echo "$EXCLUDE_QUEUES" |
+                                sed 's/.*/!(&)/' |
+                                tr ' ' '|')
+        # exclude some queues
+        qstat_explain=$(qstat -f -q "$queue_wildcard" -explain $TO_EXPLAIN)
+    fi
+
+    echo "$qstat_explain" |
+    uniq |
+    # grab lines with colons and line before them
+    # this will grab multiple message lines
+    egrep --no-group-separator -B1 ':' |
+    awk '/^[^\t]/ { print $1, $6; next } { print }' |
+    # make admin msgs stand out
+    egrep -e '$' -e '.*admin msg:.*'
+}
+
+#show all bad nodes
+function qbad () {
+    # ignores a list of queues unless -v is specified
+
+    # queues to ignore
+    local EXCLUDE_QUEUES='test.q geospatial-test.q'
+    # all UGE states
+    local ALL_STATES='acdosuACDES'
+
+    local qstat_output
+
+    if [[ $1 == "-v" ]]; then
+        # grab it all
+        qstat_output=$(qstat -f)
+    else
+        # assemble an UGE wildcard string to exclude queues
+        local queue_wildcard=$(echo "$EXCLUDE_QUEUES" |
+                                sed 's/.*/!(&)/' |
+                                tr ' ' '|')
+        # exclude some queues
+        qstat_output=$(qstat -f -q "$queue_wildcard")
+    fi
+
+    echo "$qstat_output" |
+    # show only nodes with something in the last column
+    awk "{if (NF > 5) print}" |
+    # highlight the node we're on and any states which include a "d"
+    # (can't highlight only the "d" because egrep has no lookahead)
+    egrep -e '$' -e ".*$(hostname -s).*" -e "[${ALL_STATES}]*d[${ALL_STATES}]*$"
+}
+
+# disable a cluster node cleanly
+function d-node () {
+    # Disable all the queue instances on a cluster node
+    #   - Must be run on an admin host
+    #   - Requires admin privileges for the targeted queue(s)
+    #
+    #   - defaults to current host as the target node
+    #   - tag the node with a message
+    #   - timestamps and signs the message
+    #   - shows result of the change
+
+    local func_name=${FUNCNAME[0]}
+
+    # try to check whether this is a cluster node
+    if ! which qmod > /dev/null; then
+        echo "$func_name: no 'qmod' in path. Is this a cluster node?"
+        return 10
+    fi
+
+    # try to determine the actual user
+    user=`who am i | cut -d' ' -f1`
+
+    # if logged in as root, prompt for a username to put in the message
+    if [[ $user == "root" ]]; then
+        read -p "Running as root. Please provide your username: " user
+    fi
+
+    # confirm we have a valid username
+    if ! getent passwd $user > /dev/null; then
+        echo "Invalid username: $user"
+        return 11
+    fi
+
+    # check the first argument
+    if getent hosts $1 > /dev/null; then
+        # if it's a hostname, use it as the node
+        local node=$1
+        # remove the first argument
+        shift
+    else
+        # if it's not a hostname, use the current host as the node
+        local node=$(hostname -s)
+    fi
+
+    # need at least one argument: a message
+    if (( $# == 0 )); then
+        echo "Usage: $func_name [node_name] <message>"
+        echo
+        echo "  node_name  optional (default: current host)"
+        echo "  message    reason for disabling"
+        echo
+        echo "Disables all queue instance on a node"
+        echo "(Overwrites existing messages on nodes)"
+        return 1
+    fi
+
+    # the rest of the arguments are the message
+    local timestamp=$(date +'%D %T')
+    local message="$user: $@ ($timestamp)"
+
+    # disable the node with the message
+    qmod -d "*@$node" -msg "$message"
+    echo
+    # from "line with node" until "line with dashes" print "lines without dashes"
+    # because we don't want to print the trailing line of dashes
+    qstat -f -explain m |
+    awk -v node=$node '$1 ~ node, /^---/ {if ($0 !~ "^---") {print}}' |
+    # highlight output to match qexplain
+    egrep -e '$' -e 'admin msg:'
+}
+
+# display what permissions and ownership new files will have
+function whatami () {
+    local default_perms=$(umask -S | sed 's/[ugo]=\(r*\)\(w*\)\(x*\)/@\1@#\2#%\3%/g' | sed 's/\(.\)\1/-/g' | tr -d  ',@#%')
+    local effective_group=$(id -gn)
+    echo "$default_perms $USER:$effective_group"
+}
+
+# sum a column of numbers
+function total () {
+    if (( $# != 1 )); then
+        echo "Usage: total <column>"
+        return 1
+    fi
+
+    local col=$1
+
+    awk -v col=$col '{ tot += $col } END { print tot }'
+}
