@@ -133,7 +133,7 @@ function fix_buckets () {
 }
 
 #ssh and name your screen window for that host
-function scsh () {
+function screensh () {
     local func_name=${FUNCNAME[0]}
 
     if ! (( $# == 1 || $# == 2)); then
