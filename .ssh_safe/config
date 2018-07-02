@@ -1,8 +1,9 @@
 Host cluster-*
-	IdentityFile /homes/falko/.ssh/testing
 	ForwardAgent yes
 Host cn*
-	IdentityFile /homes/falko/.ssh/testing
+	ForwardAgent yes
+	StrictHostKeyChecking no
+Host c2-*
 	ForwardAgent yes
 	StrictHostKeyChecking no
 Host github.com
