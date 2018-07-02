@@ -322,7 +322,7 @@ function whatami () {
 function total () {
     if (( $# != 1 )); then
         echo "Usage: total <column>"
-        exit 1
+        return 1
     fi
 
     local col=$1
