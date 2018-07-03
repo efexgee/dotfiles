@@ -133,7 +133,7 @@ function fix_buckets () {
 }
 
 #ssh and name your screen window for that host
-function scsh () {
+function screensh () {
     local func_name=${FUNCNAME[0]}
 
     if ! (( $# == 1 || $# == 2)); then
@@ -141,13 +141,27 @@ function scsh () {
         return 1
     fi
 
-    local host=$1
+    # Handle user@host format
+    local user=$(echo $1 | cut -d@ -f1)
+    local host=$(echo $1 | cut -d@ -f2 | sed 's/\..*//')
 
-    if screen -X version > /dev/null 2>&1; then
-        screen -X title "$(printf "%2s - %s" $(basename $(tty)) $host)"
+    echo "$user @ $host"
+
+    # Default label is just the hostname
+    local label="$host"
+
+    # Only include username if it's different
+    if [[ -n $user ]]; then
+        if [[ $user != $USER ]]; then
+            label="${user}@${host}"
+        fi
     fi
 
-    ssh $host
+    if screen -X version > /dev/null 2>&1; then
+        screen -X title "$(printf "%2s - %s" $(basename $(tty)) $label)"
+    fi
+
+    ssh $1
 }
 
 #list all nodes restricted to projects

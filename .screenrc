@@ -1,2 +1,18 @@
 # source env in new screen windows
 shell -$SHELL
+
+### Start from Roy ###
+# Always show a status line in the window footer
+hardstatus on
+hardstatus alwayslastline
+hardstatus string "%{.bW}%-w%{.rW}%n %t%{-}%+w %=%{..G} %H %{..Y} %m/%d %C%a "
+
+# Autodetach session on hangup instead of terminating screen completely
+autodetach on
+
+# Turn off the splash screen
+startup_message off
+
+# Enable mouse scrolling and scroll bar history scrolling
+termcapinfo xterm* ti@:te@
+### End from Roy ###

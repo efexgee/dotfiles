@@ -1,13 +1,17 @@
 Host cluster-*
-	IdentityFile /homes/falko/.ssh/testing
 	ForwardAgent yes
 Host cn*
-	IdentityFile /homes/falko/.ssh/testing
+	ForwardAgent yes
+	StrictHostKeyChecking no
+Host c2-*
 	ForwardAgent yes
 	StrictHostKeyChecking no
 Host github.com
 	IdentityFile /homes/falko/.ssh/github.ihme.ssh
 	User git
-Host stash.ihme.washington.edu
+Host stash.ihme.washington.edu:/projects
+	IdentityFile /homes/falko/.ssh/ihme.bitbucket.admin.ssh
+	User git
+Host stash.ihme.washington.edu:/users
 	IdentityFile /homes/falko/.ssh/ihme.bitbucket.ssh
 	User git
