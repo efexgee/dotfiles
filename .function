@@ -141,11 +141,13 @@ function screensh () {
         return 1
     fi
 
-    # Handle user@host format
-    local user=$(echo $1 | cut -d@ -f1)
-    local host=$(echo $1 | cut -d@ -f2 | sed 's/\..*//')
+    #TODO this is dirty and should support more replacements
+    local USERNAME_REPLACEMENT="sed s/sadm_falko/sadm/"
 
-    echo "$user @ $host"
+    # Handle user@host format
+    # cut -s returns nothing if the line contains no delimiters
+    local user=$(echo $1 | cut -s -d@ -f1)
+    local host=$(echo $1 | cut -d@ -f2 | sed 's/\..*//')
 
     # Default label is just the hostname
     local label="$host"
@@ -153,12 +155,15 @@ function screensh () {
     # Only include username if it's different
     if [[ -n $user ]]; then
         if [[ $user != $USER ]]; then
+            user=$(echo $user | $USERNAME_REPLACEMENT)
             label="${user}@${host}"
         fi
     fi
 
     if screen -X version > /dev/null 2>&1; then
-        screen -X title "$(printf "%2s - %s" $(basename $(tty)) $label)"
+        # I don't think we need TTYs on these windows
+        #screen -X title "$(printf "%2s - %s" $(basename $(tty)) $label)"
+        screen -X title "$label"
     fi
 
     ssh $1
