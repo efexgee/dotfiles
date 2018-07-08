@@ -8,7 +8,7 @@
 	excludesfile = /home/falko/.dotfiles/.gitignore
 	filemode = true
 [github]
-	token = 6dfe12c4bbe2d2f2f9f4735e26bda4cfc42d5661
+	token = 882600d66c429a2933f87a18da615fe43395df76
 [color]
 	ui = auto
 [alias]
