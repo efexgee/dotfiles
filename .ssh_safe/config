@@ -12,3 +12,6 @@ Host github.com
 Host stash.ihme.washington.edu
 	IdentityFile /homes/falko/.ssh/ihme.bitbucket.ssh
 	User git
+Host stash.ihme.washington.edu
+	#IdentityFile /homes/falko/.ssh/ihme.bitbucket.admin.ssh
+	User git
