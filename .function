@@ -335,3 +335,16 @@ function total () {
 
     awk -v col=$col '{ tot += $col } END { print tot }'
 }
+
+# print a column (as awk would see it)
+function awkcol () {
+    local column
+
+    if (( $# != 1 )); then
+        # default to last column
+        awk '{ print $NF }'
+    else
+        column=$1
+        awk -v col=$column '{ print $col }'
+    fi
+}
