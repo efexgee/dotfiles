@@ -16,3 +16,4 @@
 [alias]
     co = checkout
     b = branch
+    m = checkout master
