@@ -43,6 +43,9 @@ alias df='df -PT'
 alias grep='grep --color=auto -d skip'
 alias mv='mv --no-clobber'
 
+# coding
+alias TODO='grep -H . TODO 2>/dev/null; grep --color=always -n -R TODO * | sed "s# *// *# //#" 2>/dev/null'
+
 ###### TEMPORARY
 #alias w='hostname -s >> rebooting.log'
 alias psusers='ps h -N -f -u root -u $(id -u) -u sgeadmin -u postfix -u haldaemon -u dbus -u rpcuser -u rpc -u ntp | egrep -w -v "(lldpd|sensu)" | sort | fill'
