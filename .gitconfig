@@ -7,10 +7,6 @@
     editor = vim
     excludesfile = /home/falko/.dotfiles/.gitignore
     filemode = true
-[github]
-    token = 6dfe12c4bbe2d2f2f9f4735e26bda4cfc42d5661
-[hub]
-    token = 17de14c5b557140799798c1d63b2227ebcb89db6
 [color]
     ui = auto
 [alias]
