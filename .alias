@@ -1,7 +1,3 @@
-#migration
-alias bfsplit='qfsplit --host blah-fs --credentials-store ~/.qfsd_cred.blah-fs'
-alias ex-sync='rsync_maker.py blah-fs chagas-fs --delete -x excludes'
-
 #
 # General
 #
@@ -19,6 +15,8 @@ alias stamp='date +"%Y%m%d_%H%M%S"'
 alias h_stamp='date +"%D %T"'
 
 alias short_prompt="export PS1='\[\e[91m\]\n\T\[\e[33m\]\w\[\e[91m\]#\[\e[0m\]'"
+
+alias h="history"
 
 # make PHP logs sane
 # Elder Backslash!

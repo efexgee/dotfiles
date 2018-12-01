@@ -1,6 +1,10 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
-# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
-# for examples
+
+#TODO what now?
+# source /etc/bashrc before interactive check for ssh -t cluster-dev qlogin
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
 
 # If not running interactively, don't do anything
 case $- in
@@ -8,49 +12,25 @@ case $- in
       *) return;;
 esac
 
-# UIDs and GIDs
-DEFAULT_GROUP="Domain Users" # IHME default group
-INFR_GROUP="ihme-infr"       # my normal effective group
-ADMIN_UID=700718             # my admin account
-ADMIN_GROUP="IHME-SA"        # admin account effective group
+### constants
+export VISUAL=vim
 
-# Determine which effective group to use
-effective_group="$INFR_GROUP"
-if (( `id -u` == $ADMIN_UID )); then
-    effective_group="$ADMIN_GROUP"
-fi
-
-# try to set effective group
-# don't overwrite effective group if already newgrp'd to something else
-if [[ `id -gn` = $DEFAULT_GROUP ]]; then
-    exec newgrp $effective_group
-else
-    echo "Accepting existing non-default group"
-fi
+REPOS_DIR="${HOME}/repos"
+TOOLS_DIR="${REPOS_DIR}/dotfiles/tools"
 
 # Who/what am I
 default_perms=$(umask -S | sed 's/[ugo]=\(r*\)\(w*\)\(x*\)/@\1@#\2#%\3%/g' | sed 's/\(.\)\1/-/g' | tr -d  ',@#%')
 effective_group=$(id -gn)
+
+#TODO should be a function or alias
 echo
 echo "$default_perms $USER:$effective_group"
 echo
 
-# source /etc/bashrc before interactive check for ssh -t cluster-dev qlogin
-if [ -f /etc/bashrc ]; then
-    . /etc/bashrc
-fi
-
-# source computer-specific dotfiles
-if [ -f $HOME/.viserc ]; then
-    . $HOME/.viserc
-fi
-
-# use vim
-export VISUAL=vim
-
 # Use bash-completion, if available
+#TODO re-write this as a proper if statement
 [[ $PS1 && -f /usr/share/bash-completion/bash_completion ]] && \
-    . /usr/share/bash-completion/bash_completion
+    . "/usr/share/bash-completion/bash_completion"
 
 # don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
@@ -72,10 +52,6 @@ HISTFILESIZE=2000
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
 shopt -s checkwinsize
-
-# If set, the pattern "**" used in a pathname expansion context will
-# match all files and zero or more directories and subdirectories.
-#shopt -s globstar
 
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
@@ -139,44 +115,42 @@ if [ "$color_prompt" = yes ]; then
     fi
 fi
 
+#TODO untangle all the color prompt stuff
 unset color_prompt force_color_prompt
 
 # If this is an xterm set the title to user@host:dir
+#TODO Does this work for other OSs?
 case "$TERM" in
-xterm*|rxvt*)
-    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
-    ;;
-*)
-    ;;
+    xterm*|rxvt*)
+        PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+        ;;
+    *)
+        ;;
 esac
 
 # enable color support of ls and also add handy aliases
-if [ -x /usr/bin/dircolors ]; then
-    if [ -r $HOME/.dircolors ]; then
+if [[ -x /usr/bin/dircolors ]]; then
+    if [[ -f $HOME/.dircolors ]]; then
+        # set dircolors from global config file
         eval "$(dircolors -b)"
-        eval "$(dircolors -b $HOME/.dircolors | sed 's/^LS_COLORS=/LS_COLORS=$LS_COLORS:/')"	#FXG: append our colors
+        # append dircolors from our config file
+        eval "$(dircolors -b $HOME/.dircolors | sed 's/^LS_COLORS=/LS_COLORS=$LS_COLORS:/')"
     fi
 
     alias ls='ls -hF --color=auto'	#human-readable, append type indicator character
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
 
     alias grep='grep --color=auto'
     alias fgrep='fgrep --color=auto'
     alias egrep='egrep --color=auto'
 fi
 
-#FXG Aliases
-if [ -f $HOME/.alias ]; then
-    source $HOME/.alias
+if [[ -f "${HOME}/.alias" ]]; then
+    . "${HOME}/.alias"
 fi
 
-#FXG Functions
-if [ -f $HOME/.function ]; then
-    source $HOME/.function
+if [[ -f "${HOME}/.function" ]]; then
+    . "${HOME}/.function"
 fi
-
-alias h='history'
 
 #FXG: Set color for grep output
 #FXG: mc=yellow, should never show (tells you you did something weird)
@@ -194,26 +168,10 @@ export GREP_COLORS='ms=01;31:mc=33:sl=:cx=:fn=01;37:ln=32:bn=35:se=36'
 # se - separators after filenames and line numbers, and between context blocks (i.e. ':' '-' '--')
 
 # colored GCC warnings and errors
+#TODO look into this
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
-# some more ls aliases
-#alias ll='ls -alF'
-#alias la='ls -A'
-#alias l='ls -CF'
-
-# Add an "alert" alias for long running commands.  Use like so:
-#   sleep 10; alert
-alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
-
-# Alias definitions.
-# You may want to put all your additions into a separate file like
-# ~/.bash_aliases, instead of adding them here directly.
-# See /usr/share/doc/bash-doc/examples in the bash-doc package.
-
-if [ -f $HOME/.bash_aliases ]; then
-    . $HOME/.bash_aliases
-fi
-
+#TODO check on this stuff
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
 # sources /etc/bash.bashrc).
@@ -225,21 +183,49 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# only on the desktop VM
-if [ -d $HOME/pass ]; then
-    export PASSWORD_STORE_DIR=$HOME/pass
+#TODO pull these out into separate dotfiles
+
+### vise - home VM
+if [[ $HOSTNAME == "vise" ]]; then
+    # github auth token for the 'hub' command
+    GITHUB_TOKEN=$(git config hub.token)
+    export GITHUB_TOKEN
+fi
+
+### daly - work VM
+if [[ $HOSTNAME == "daly" ]]; then
+    export PASSWORD_STORE_DIR="${REPOS_DIR}/pass"
+
+    # UIDs and GIDs
+    DEFAULT_GROUP="Domain Users" # IHME default group
+    INFR_GROUP="ihme-infr"       # my normal effective group
+    ADMIN_UID=700718             # my admin account
+    ADMIN_GROUP="IHME-SA"        # admin account effective group
+
+    effective_group="$INFR_GROUP"
+
+    # Determine which effective group to use
+    if (( $(id -u) == ADMIN_UID )); then
+        effective_group="$ADMIN_GROUP"
+    fi
+
+    # try to set effective group
+    # don't overwrite effective group if already newgrp'd to something else
+    if [[ $(id -gn) = "$DEFAULT_GROUP" ]]; then
+        exec newgrp $effective_group
+    else
+        echo "Accepting existing non-default group"
+    fi
 fi
 
 # added by Miniconda3 4.3.11 installer
-if [ -d $HOME/bin/miniconda3/bin ]; then
+if [[ -d $HOME/bin/miniconda3/bin ]]; then
     export PATH="/home/falko/bin/miniconda3/bin:$PATH"
 fi
 
 # source functions and aliases from other files
-SOURCE_FILES="$HOME/.dotfiles"
-for dotfile in .cluster_src .qumulo_src .salt_src .stornext_src .rsync_src .reporting_src; do
-    file="${SOURCE_FILES}/${dotfile}"
-    if [[ -f $file ]]; then
-        . $file
+for tool_src in {TOOLS_DIR}/*; do
+    if [[ -f "$tool_src" ]]; then
+        . "$tool_src"
     fi
 done
