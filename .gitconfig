@@ -15,4 +15,5 @@
     co = checkout
     cob = checkout -b
     b = branch
+    m = checkout master
     pushall = !git remote | xargs -L1 git push --all
