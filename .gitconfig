@@ -1,15 +1,18 @@
 [user]
-	email = falko@uw.edu
-	name = Falko Goettsch
+    email = falko@uw.edu
+    name = Falko Goettsch
 [push]
-	default = simple
+    default = simple
 [core]
-	editor = vim
-	excludesfile = /home/falko/.dotfiles/.gitignore
-	filemode = true
+    editor = vim
+    excludesfile = /home/falko/.dotfiles/.gitignore
+    filemode = true
 [github]
-	token = 882600d66c429a2933f87a18da615fe43395df76
+    token = REDACTED
 [color]
-	ui = auto
+    ui = auto
 [alias]
-	co = checkout
+    co = checkout
+    cob = checkout -b
+    b = branch
+    pushall = !git remote | xargs -L1 git push --all

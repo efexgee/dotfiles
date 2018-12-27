@@ -221,8 +221,9 @@ if ! shopt -oq posix; then
 fi
 
 # only on the desktop VM
-if [ -d $HOME/pass ]; then
-    export PASSWORD_STORE_DIR=$HOME/pass
+PASS_DIR=$HOME/repos/pass
+if [ -d $PASS_DIR ]; then
+    export PASSWORD_STORE_DIR=$PASS_DIR
 fi
 
 # added by Miniconda3 4.3.11 installer
