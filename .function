@@ -141,6 +141,10 @@ function screensh () {
         return 1
     fi
 
+    if [[ -z $STY ]]; then
+        echo "Not inside a screen session. Plain ssh'ing instead."
+    fi
+
     #TODO this is dirty and should support more replacements
     local USERNAME_REPLACEMENT="sed s/sadm_falko/sadm/"
 
@@ -167,6 +171,46 @@ function screensh () {
     fi
 
     ssh $1
+}
+
+#create a screen window and ssh to the host in it (will disappear when ssh dies)
+function sshunt() {
+    local func_name=${FUNCNAME[0]}
+
+    if ! (( $# == 1 || $# == 2)); then
+        echo "Usage: $func_name <hostname>"
+        return 1
+    fi
+
+    if [[ -z $STY ]]; then
+        echo "Not inside a screen session."
+        return 2
+    fi
+
+    #TODO this is dirty and should support more replacements
+    local USERNAME_REPLACEMENT="sed s/sadm_falko/sadm/"
+
+    # Handle user@host format
+    # cut -s returns nothing if the line contains no delimiters
+    local user=$(echo $1 | cut -s -d@ -f1)
+    local host=$(echo $1 | cut -d@ -f2 | sed 's/\..*//')
+
+    # Default label is just the hostname
+    local label="$host"
+
+    # Only include username if it's different
+    if [[ -n $user ]]; then
+        if [[ $user != $USER ]]; then
+            user=$(echo $user | $USERNAME_REPLACEMENT)
+            label="${user}@${host}"
+        fi
+    fi
+
+    if screen -X version > /dev/null 2>&1; then
+        # I don't think we need TTYs on these windows
+        #screen -X title "$(printf "%2s - %s" $(basename $(tty)) $label)"
+        screen -S $STY -X screen -t "$label" ssh $1
+    fi
 }
 
 #list all nodes restricted to projects
@@ -347,4 +391,37 @@ function awkcol () {
         column=$1
         awk -v col=$column '{ print $col }'
     fi
+}
+
+# report whether an IP address pings
+function check_ping () {
+    local func_name=${FUNCNAME[0]}
+
+    # try to check whether this is a cluster node
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <ip>"
+        return 10
+    fi
+
+    local ip_address="$1"
+
+    # hide the output but not errors so we can see
+    # "ping: unknown host" etc.
+    if ping -c 1 -w 1 $ip_address > /dev/null; then
+        echo "$ip_address pings"
+    else
+        echo "$ip_address does not ping"
+    fi
+}
+
+# show formatted Cobbler install log with timestamps
+function cobbler_log () {
+    local func_name=${FUNCNAME[0]}
+
+    local COBBLER_INSTALL_LOG='/var/log/cobbler/install.log'
+
+    cat "$COBBLER_INSTALL_LOG" |
+    awk '{
+        printf "%17s %-5s %15s %s\n", strftime("%D %T",$5), $4, $3, $2, $1
+    }'
 }

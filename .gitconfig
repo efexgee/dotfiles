@@ -7,9 +7,11 @@
 	editor = vim
 	excludesfile = /home/falko/.dotfiles/.gitignore
 	filemode = true
+	eol = lf
 [github]
 	token = 882600d66c429a2933f87a18da615fe43395df76
 [color]
 	ui = auto
 [alias]
 	co = checkout
+	b = branch
