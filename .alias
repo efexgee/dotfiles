@@ -32,7 +32,7 @@ alias deconda='source deactivate'
 
 # screen
 alias name-window-dir='screen -X title "$(printf "%2s - %s" `basename \`tty\`` `basename \`pwd\``)"'
-#alias name-window-host='screen -X title "$(printf "%2s - %s" `basename \`tty\`` `hostname -s`)"'
+alias scrname='screen -X title'
 
 # default command flags
 alias split='split --numeric-suffixes=01'
