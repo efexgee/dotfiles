@@ -7,7 +7,7 @@ fi
 
 # User specific environment and startup programs
 
-PATH=$HOME/bin:$HOME/miniconda2/bin:$PATH
+PATH=$HOME/bin:$HOME/miniconda2/bin:/usr/local/anaconda-current/bin:$PATH
 
 export PATH
 

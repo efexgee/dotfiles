@@ -128,7 +128,8 @@ if [ "$color_prompt" = yes ]; then
     if (( $(id -u) == 0 || $(id -u) == $ADMIN_UID )); then
         #"root" prompt colors username red and replaces $ with a red #
         PS1='\n\T \[\e[91m\]\u\[\e[32m\]@\h:\[\e[33m\]\w\[\e[91m\]#\[\e[0m\] '
-        echo "Remember: \"With root power comes root responsibility.\""
+        #this is printing too often because we use sadm_* everywhere
+        #echo "Remember: \"With root power comes root responsibility.\""
     else
         PS1='\n\T \[\e[32m\]\u@\h:\[\e[33m\]\w\[\e[0m\]\$ '
     fi
@@ -239,3 +240,6 @@ for dotfile in .cluster_src .qumulo_src .salt_src .stornext_src .rsync_src .repo
         . $file
     fi
 done
+
+# check for screen sessions
+screen -ls | grep $'^\t'
