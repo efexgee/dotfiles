@@ -403,7 +403,6 @@ function awkcol () {
 function check_ping () {
     local func_name=${FUNCNAME[0]}
 
-    # try to check whether this is a cluster node
     if (( $# != 1 )); then
         echo "Usage: $func_name <ip>"
         return 10
@@ -430,4 +429,18 @@ function cobbler_log () {
     awk '{
         printf "%17s %-5s %15s %s\n", strftime("%D %T",$5), $4, $3, $2, $1
     }'
+}
+
+# set the screen window's title from anywhere
+function stitle () {
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <window title>"
+        return 10
+    fi
+
+    local window_title="$1"
+
+    echo -en "\033k${window_title}\033\\"
 }
