@@ -65,6 +65,12 @@ function bbify () {
     fi
 
     local user=$USER
+
+    # Hack to not write to sadm_falko's Stash
+    if [[ $user == "sadm_falko" ]]; then
+        user='falko'
+    fi
+
     local name=$1
 
     local URL="stash.ihme.washington.edu"
