@@ -433,6 +433,8 @@ function cobbler_log () {
 
 # set the screen window's title from anywhere
 function stitle () {
+    # Note: you can disable dynamic titles via:
+    #       unset PROMPT_COMMAND
     local func_name=${FUNCNAME[0]}
 
     if (( $# != 1 )); then
