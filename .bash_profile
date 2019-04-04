@@ -8,6 +8,7 @@ fi
 # User specific environment and startup programs
 
 PATH=$HOME/bin:$HOME/miniconda2/bin:/usr/local/anaconda-current/bin:$PATH
+PATH="/ihme/geospatial/tools/bin:$PATH"
 
 export PATH
 
