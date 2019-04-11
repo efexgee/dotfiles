@@ -43,6 +43,9 @@ fi
 # use vim
 export VISUAL=vim
 
+# disabled some shellcheck warnings
+export SHELLCHECK_OPTS='-e SC2196 -e SC1090 -e SC1091'
+
 # Use bash-completion, if available
 [[ $PS1 && -f /usr/share/bash-completion/bash_completion ]] && \
     . /usr/share/bash-completion/bash_completion
