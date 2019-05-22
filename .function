@@ -466,7 +466,8 @@ function dns_check () {
     #abraid-app-p01.ihme.washington.edu is an alias for abraid-app-p01.hosts.ihme.washington.edu.
     #abraid-app-p01.hosts.ihme.washington.edu has address 10.158.105.47
 
-    for dns_server in ad1 ad3 ad4 infrastructure-bind-dns-p01 infrastructure-bind-dns-p02; do
+    #for dns_server in ad1 ad3 ad4 infrastructure-bind-dns-p01 infrastructure-bind-dns-p02; do
+    for dns_server in 10.158.104.8 10.158.104.9 172.16.23.6 172.16.56.10 172.16.56.11 172.22.105.12 172.22.48.12; do
         echo "=== $dns_server ===" | egrep .
         host "$hostname" "$dns_server" | sed '
             /^Using domain server:/d

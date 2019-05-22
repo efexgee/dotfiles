@@ -18,6 +18,9 @@ alias short_prompt="export PS1='\[\e[91m\]\n\T\[\e[33m\]\w\[\e[91m\]#\[\e[0m\]'"
 
 alias hl='egrep -e $ -e'
 
+# cluster 'df' check
+alias cdf='df -PhT -x devtmpfs -x tmpfs | sort -nk6 | uniq -s 44 -w 27'
+
 # make PHP logs sane
 # Elder Backslash!
 alias de-PHP='tr -s "\\\\" | sed "s#\\\n#\\n#g; s#\\\/#/#g; s#\\\\\"#\\\"#g" | egrep -e $ -e "([]:(){}\","'\\\''"[]|->)"'
@@ -45,3 +48,4 @@ alias mv='mv --no-clobber'
 alias shake_salt='sudo service salt-minion stop && pgrep salt || sudo service salt-minion start'
 alias splain='qexplain | grep -A1 `hostname -s`'
 alias lib_check='python -c "import pymc"'
+alias high='sudo /opt/saltstack/bin/salt-call state.highstate -l error --output-diff'
