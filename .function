@@ -456,7 +456,7 @@ function dns_check () {
         return 10
     fi
 
-    hostname=$1
+    local hostname=$1
 
     #Using domain server:
     #Name: infrastructure-bind-dns-p02
@@ -477,4 +477,41 @@ function dns_check () {
             /^$/d
         '
     done
+}
+
+# run the dmesg with nicest flags supported on the system
+function dmesg () {
+    # THIS OVERRIDES THE dmesg COMMAND
+
+    # find the dmesg command
+    local dmesg_cmd=$(which dmesg)
+    local args=$*
+
+    # dmesg from util-linux 2.23.2
+    $dmesg_cmd -TLkx $args 2> /dev/null ||
+    # dmesg from util-linux 2.20.1
+    $dmesg_cmd -Tkx $args 2> /dev/null ||
+    # fallback
+    $dmesg_cmd
+}
+
+# attempt to find the IPMI interface's DNS name for a host
+function find_ipmi () {
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <hostname>"
+        return 10
+    fi
+
+    local hostname=${1%%.*}
+    local found=
+
+    host ${hostname}-ipmi.ipmi.ihme.washington.edu 2> /dev/null | grep -v NXDOMAIN && found='yes'
+    host m-${hostname}.ipmi.ihme.washington.edu 2> /dev/null | grep -v NXDOMAIN && found='yes'
+
+    if ! [[ $found ]]; then
+        echo "No IPMI DNS entry found for $hostname"
+        return 1
+    fi
 }
