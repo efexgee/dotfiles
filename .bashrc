@@ -25,15 +25,13 @@ fi
 if [[ `id -gn` = $DEFAULT_GROUP ]]; then
     exec newgrp $effective_group
 else
-    echo "Accepting existing non-default group"
+    #TODO turns out that I never look at this
+    #echo "Accepting existing non-default group"
+    : #shell no-op
 fi
 
-# Who/what am I
-default_perms=$(umask -S | sed 's/[ugo]=\(r*\)\(w*\)\(x*\)/@\1@#\2#%\3%/g' | sed 's/\(.\)\1/-/g' | tr -d  ',@#%')
-effective_group=$(id -gn)
-echo
-echo "$default_perms $USER:$effective_group"
-echo
+# print my umask and effective group
+whatami
 
 # source /etc/bashrc before interactive check for ssh -t cluster-dev qlogin
 if [ -f /etc/bashrc ]; then
@@ -41,6 +39,7 @@ if [ -f /etc/bashrc ]; then
 fi
 
 # use vim
+export EDITOR=vim
 export VISUAL=vim
 
 # disabled some shellcheck warnings
@@ -245,4 +244,4 @@ for dotfile in .cluster_src .qumulo_src .salt_src .stornext_src .rsync_src .repo
 done
 
 # check for screen sessions
-screen -ls | grep $'^\t'
+screen -ls | grep $'^\t' | sed 's/^\t//'

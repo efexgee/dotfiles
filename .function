@@ -446,3 +446,72 @@ function stitle () {
 
     echo -en "\033k${window_title}\033\\"
 }
+
+# perform DNS lookup across all DNS servers
+function dns_check () {
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <hostname>"
+        return 10
+    fi
+
+    local hostname=$1
+
+    #Using domain server:
+    #Name: infrastructure-bind-dns-p02
+    #Address: 10.158.104.9#53
+    #Aliases: 
+    #
+    #abraid-app-p01.ihme.washington.edu is an alias for abraid-app-p01.hosts.ihme.washington.edu.
+    #abraid-app-p01.hosts.ihme.washington.edu has address 10.158.105.47
+
+    #for dns_server in ad1 ad3 ad4 infrastructure-bind-dns-p01 infrastructure-bind-dns-p02; do
+    for dns_server in 10.158.104.8 10.158.104.9 172.16.23.6 172.16.56.10 172.16.56.11 172.22.105.12 172.22.48.12; do
+        echo "=== $dns_server ===" | egrep .
+        host "$hostname" "$dns_server" | sed '
+            /^Using domain server:/d
+            /^Name:/d
+            /^Address:/d
+            /^Aliases:/d
+            /^$/d
+        '
+    done
+}
+
+# run the dmesg with nicest flags supported on the system
+function dmesg () {
+    # THIS OVERRIDES THE dmesg COMMAND
+
+    # find the dmesg command
+    local dmesg_cmd=$(which dmesg)
+    local args=$*
+
+    # dmesg from util-linux 2.23.2
+    $dmesg_cmd -TLkx $args 2> /dev/null ||
+    # dmesg from util-linux 2.20.1
+    $dmesg_cmd -Tkx $args 2> /dev/null ||
+    # fallback
+    $dmesg_cmd
+}
+
+# attempt to find the IPMI interface's DNS name for a host
+function find_ipmi () {
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <hostname>"
+        return 10
+    fi
+
+    local hostname=${1%%.*}
+    local found=
+
+    host ${hostname}-ipmi.ipmi.ihme.washington.edu 2> /dev/null | grep -v NXDOMAIN && found='yes'
+    host m-${hostname}.ipmi.ihme.washington.edu 2> /dev/null | grep -v NXDOMAIN && found='yes'
+
+    if ! [[ $found ]]; then
+        echo "No IPMI DNS entry found for $hostname"
+        return 1
+    fi
+}

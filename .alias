@@ -18,6 +18,9 @@ alias short_prompt="export PS1='\[\e[91m\]\n\T\[\e[33m\]\w\[\e[91m\]#\[\e[0m\]'"
 
 alias hl='egrep -e $ -e'
 
+# cluster 'df' check
+alias cdf='df -PhT -x devtmpfs -x tmpfs | sort -nk6 | uniq -s 44 -w 27'
+
 # make PHP logs sane
 # Elder Backslash!
 alias de-PHP='tr -s "\\\\" | sed "s#\\\n#\\n#g; s#\\\/#/#g; s#\\\\\"#\\\"#g" | egrep -e $ -e "([]:(){}\","'\\\''"[]|->)"'
@@ -25,14 +28,21 @@ alias de-PHP='tr -s "\\\\" | sed "s#\\\n#\\n#g; s#\\\/#/#g; s#\\\\\"#\\\"#g" | e
 #create a tombstoning directory for staged deletions
 alias tombstone='sudo mkdir TO_BE_DELETED && sudo chgrp IHME-SA TO_BE_DELETED && sudo touch TO_BE_DELETED/timestamp.`date +"%s"`'
 
+#TODO should be under a salt-tools or something
+alias high='sudo /opt/saltstack/bin/salt-call state.highstate -l error --output-diff'
+
 # Conda
-alias py2='source activate py2'
-alias py3="source activate py3"
-alias deconda='source deactivate'
+#TODO What's the sane way to deal with 'activate' path?
+CONDA_CMDS_PATH='/share/local/anaconda-2.2/bin'
+alias py2="source ${CONDA_CMDS_PATH}/activate py2"
+alias py3="source ${CONDA_CMDS_PATH}/activate py3"
+alias deconda="source ${CONDA_CMDS_PATH}/deactivate"
 
 # screen
 alias name-window-dir='screen -X title "$(printf "%2s - %s" `basename \`tty\`` `basename \`pwd\``)"'
 alias scrname='screen -X title'
+unset PROMPT_COMMAND
+alias screen-no-title-clobber='unset PROMPT_COMMAND'
 
 # default command flags
 alias split='split --numeric-suffixes=01'
@@ -40,6 +50,7 @@ alias lsblk='lsblk -o TYPE,NAME,KNAME,MAJ:MIN,MODEL,SIZE,ROTA'
 alias df='df -PT'
 alias grep='grep --color=auto -d skip -I'
 alias mv='mv --no-clobber'
+alias last='last -daFx'
 
 # alternative commands
 if which colordiff > /dev/null 2>&1; then
