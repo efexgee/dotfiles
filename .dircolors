@@ -32,6 +32,23 @@ ORPHAN		07;31
 #FXG: Underline files with link count > 1
 MULTIHARDLINK	04
 
+# From: https://askubuntu.com/a/61345
+#NORMAL 00 # global default, although everything should be something.
+#FILE 00 # normal file
+#DIR 01;34 # directory
+#LINK 01;36 # symbolic link. (If you set this to 'target' instead of a
+# numerical value, the color is as for the file pointed to.)
+#FIFO 40;33 # pipe
+#SOCK 01;35 # socket
+#DOOR 01;35 # door
+#BLK 40;33;01 # block device driver
+#CHR 40;33;01 # character device driver
+SETUID 37;41 # file that is setuid (u+s)
+SETGID 30;43 # file that is setgid (g+s)
+STICKY_OTHER_WRITABLE 34;41 # dir that is sticky and other-writable (+t,o+w)
+OTHER_WRITABLE 34 # dir that is other-writable (o+w) and not sticky
+#STICKY 37;44 # dir with the sticky bit set (+t) and not other-writable
+
 #FXG: Hack to color code dotfiles. LS_COLORS doesn't support this
 #FXG: so each file needs its own entry as if it were an extension
 .dircolors	00;35

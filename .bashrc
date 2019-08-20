@@ -25,15 +25,13 @@ fi
 if [[ `id -gn` = $DEFAULT_GROUP ]]; then
     exec newgrp $effective_group
 else
-    echo "Accepting existing non-default group"
+    #TODO turns out that I never look at this
+    #echo "Accepting existing non-default group"
+    : #shell no-op
 fi
 
-# Who/what am I
-default_perms=$(umask -S | sed 's/[ugo]=\(r*\)\(w*\)\(x*\)/@\1@#\2#%\3%/g' | sed 's/\(.\)\1/-/g' | tr -d  ',@#%')
-effective_group=$(id -gn)
-echo
-echo "$default_perms $USER:$effective_group"
-echo
+# print my umask and effective group
+whatami
 
 # source /etc/bashrc before interactive check for ssh -t cluster-dev qlogin
 if [ -f /etc/bashrc ]; then
@@ -41,7 +39,11 @@ if [ -f /etc/bashrc ]; then
 fi
 
 # use vim
+export EDITOR=vim
 export VISUAL=vim
+
+# disabled some shellcheck warnings
+export SHELLCHECK_OPTS='-e SC2196 -e SC1090 -e SC1091'
 
 # Use bash-completion, if available
 [[ $PS1 && -f /usr/share/bash-completion/bash_completion ]] && \
@@ -128,7 +130,8 @@ if [ "$color_prompt" = yes ]; then
     if (( $(id -u) == 0 || $(id -u) == $ADMIN_UID )); then
         #"root" prompt colors username red and replaces $ with a red #
         PS1='\n\T \[\e[91m\]\u\[\e[32m\]@\h:\[\e[33m\]\w\[\e[91m\]#\[\e[0m\] '
-        echo "Remember: \"With root power comes root responsibility.\""
+        #this is printing too often because we use sadm_* everywhere
+        #echo "Remember: \"With root power comes root responsibility.\""
     else
         PS1='\n\T \[\e[32m\]\u@\h:\[\e[33m\]\w\[\e[0m\]\$ '
     fi
@@ -221,8 +224,9 @@ if ! shopt -oq posix; then
 fi
 
 # only on the desktop VM
-if [ -d $HOME/pass ]; then
-    export PASSWORD_STORE_DIR=$HOME/pass
+PASS_DIR=$HOME/repos/pass
+if [ -d $PASS_DIR ]; then
+    export PASSWORD_STORE_DIR=$PASS_DIR
 fi
 
 # added by Miniconda3 4.3.11 installer
@@ -238,3 +242,6 @@ for dotfile in .cluster_src .qumulo_src .salt_src .stornext_src .rsync_src .repo
         . $file
     fi
 done
+
+# check for screen sessions
+screen -ls | grep $'^\t' | sed 's/^\t//'

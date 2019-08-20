@@ -1,12 +1,19 @@
 [user]
-	email = falko@uw.edu
-	name = Falko Goettsch
+    email = falko@uw.edu
+    name = Falko Goettsch
 [push]
-	default = simple
+    default = simple
 [core]
-	editor = vim
-	excludesfile = /home/falko/.dotfiles/.gitignore
+    editor = vim
+    excludesfile = /home/falko/.dotfiles/.gitignore
+    filemode = true
+    eol = lf
 [github]
-	token = 57133881c7e18e7791279c1a289a387716bbf6fb
+    token = REDACTED
 [color]
-	ui = auto
+    ui = auto
+[alias]
+    co = checkout
+    cob = checkout -b
+    b = branch
+    m = checkout master

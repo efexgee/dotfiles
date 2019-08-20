@@ -65,6 +65,12 @@ function bbify () {
     fi
 
     local user=$USER
+
+    # Hack to not write to sadm_falko's Stash
+    if [[ $user == "sadm_falko" ]]; then
+        user='falko'
+    fi
+
     local name=$1
 
     local URL="stash.ihme.washington.edu"
@@ -141,11 +147,17 @@ function screensh () {
         return 1
     fi
 
-    # Handle user@host format
-    local user=$(echo $1 | cut -d@ -f1)
-    local host=$(echo $1 | cut -d@ -f2 | sed 's/\..*//')
+    if [[ -z $STY ]]; then
+        echo "Not inside a screen session. Plain ssh'ing instead."
+    fi
 
-    echo "$user @ $host"
+    #TODO this is dirty and should support more replacements
+    local USERNAME_REPLACEMENT="sed s/sadm_falko/sadm/"
+
+    # Handle user@host format
+    # cut -s returns nothing if the line contains no delimiters
+    local user=$(echo $1 | cut -s -d@ -f1)
+    local host=$(echo $1 | cut -d@ -f2 | sed 's/\..*//')
 
     # Default label is just the hostname
     local label="$host"
@@ -153,15 +165,58 @@ function screensh () {
     # Only include username if it's different
     if [[ -n $user ]]; then
         if [[ $user != $USER ]]; then
+            user=$(echo $user | $USERNAME_REPLACEMENT)
             label="${user}@${host}"
         fi
     fi
 
     if screen -X version > /dev/null 2>&1; then
-        screen -X title "$(printf "%2s - %s" $(basename $(tty)) $label)"
+        # I don't think we need TTYs on these windows
+        #screen -X title "$(printf "%2s - %s" $(basename $(tty)) $label)"
+        screen -X title "$label"
     fi
 
     ssh $1
+}
+
+#create a screen window and ssh to the host in it (will disappear when ssh dies)
+function sshunt() {
+    local func_name=${FUNCNAME[0]}
+
+    if ! (( $# == 1 || $# == 2)); then
+        echo "Usage: $func_name <hostname>"
+        return 1
+    fi
+
+    if [[ -z $STY ]]; then
+        echo "Not inside a screen session."
+        return 2
+    fi
+
+    #TODO this is dirty and should support more replacements
+    local USERNAME_REPLACEMENT="sed s/sadm_falko/sadm/"
+
+    # Handle user@host format
+    # cut -s returns nothing if the line contains no delimiters
+    local user=$(echo $1 | cut -s -d@ -f1)
+    local host=$(echo $1 | cut -d@ -f2 | sed 's/\..*//')
+
+    # Default label is just the hostname
+    local label="$host"
+
+    # Only include username if it's different
+    if [[ -n $user ]]; then
+        if [[ $user != $USER ]]; then
+            user=$(echo $user | $USERNAME_REPLACEMENT)
+            label="${user}@${host}"
+        fi
+    fi
+
+    if screen -X version > /dev/null 2>&1; then
+        # I don't think we need TTYs on these windows
+        #screen -X title "$(printf "%2s - %s" $(basename $(tty)) $label)"
+        screen -S $STY -X screen -t "$label" ssh $1
+    fi
 }
 
 #list all nodes restricted to projects
@@ -329,4 +384,134 @@ function total () {
     local col=$1
 
     awk -v col=$col '{ tot += $col } END { print tot }'
+}
+
+# print a column (as awk would see it)
+function awkcol () {
+    local column
+
+    if (( $# != 1 )); then
+        # default to last column
+        awk '{ print $NF }'
+    else
+        column=$1
+        awk -v col=$column '{ print $col }'
+    fi
+}
+
+# report whether an IP address pings
+function check_ping () {
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <ip>"
+        return 10
+    fi
+
+    local ip_address="$1"
+
+    # hide the output but not errors so we can see
+    # "ping: unknown host" etc.
+    if ping -c 1 -w 1 $ip_address > /dev/null; then
+        echo "$ip_address pings"
+    else
+        echo "$ip_address does not ping"
+    fi
+}
+
+# show formatted Cobbler install log with timestamps
+function cobbler_log () {
+    local func_name=${FUNCNAME[0]}
+
+    local COBBLER_INSTALL_LOG='/var/log/cobbler/install.log'
+
+    cat "$COBBLER_INSTALL_LOG" |
+    awk '{
+        printf "%17s %-5s %15s %s\n", strftime("%D %T",$5), $4, $3, $2, $1
+    }'
+}
+
+# set the screen window's title from anywhere
+function stitle () {
+    # Note: you can disable dynamic titles via:
+    #       unset PROMPT_COMMAND
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <window title>"
+        return 10
+    fi
+
+    local window_title="$1"
+
+    echo -en "\033k${window_title}\033\\"
+}
+
+# perform DNS lookup across all DNS servers
+function dns_check () {
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <hostname>"
+        return 10
+    fi
+
+    local hostname=$1
+
+    #Using domain server:
+    #Name: infrastructure-bind-dns-p02
+    #Address: 10.158.104.9#53
+    #Aliases: 
+    #
+    #abraid-app-p01.ihme.washington.edu is an alias for abraid-app-p01.hosts.ihme.washington.edu.
+    #abraid-app-p01.hosts.ihme.washington.edu has address 10.158.105.47
+
+    #for dns_server in ad1 ad3 ad4 infrastructure-bind-dns-p01 infrastructure-bind-dns-p02; do
+    for dns_server in 10.158.104.8 10.158.104.9 172.16.23.6 172.16.56.10 172.16.56.11 172.22.105.12 172.22.48.12; do
+        echo "=== $dns_server ===" | egrep .
+        host "$hostname" "$dns_server" | sed '
+            /^Using domain server:/d
+            /^Name:/d
+            /^Address:/d
+            /^Aliases:/d
+            /^$/d
+        '
+    done
+}
+
+# run the dmesg with nicest flags supported on the system
+function dmesg () {
+    # THIS OVERRIDES THE dmesg COMMAND
+
+    # find the dmesg command
+    local dmesg_cmd=$(which dmesg)
+    local args=$*
+
+    # dmesg from util-linux 2.23.2
+    $dmesg_cmd -TLkx $args 2> /dev/null ||
+    # dmesg from util-linux 2.20.1
+    $dmesg_cmd -Tkx $args 2> /dev/null ||
+    # fallback
+    $dmesg_cmd
+}
+
+# attempt to find the IPMI interface's DNS name for a host
+function find_ipmi () {
+    local func_name=${FUNCNAME[0]}
+
+    if (( $# != 1 )); then
+        echo "Usage: $func_name <hostname>"
+        return 10
+    fi
+
+    local hostname=${1%%.*}
+    local found=
+
+    host ${hostname}-ipmi.ipmi.ihme.washington.edu 2> /dev/null | grep -v NXDOMAIN && found='yes'
+    host m-${hostname}.ipmi.ihme.washington.edu 2> /dev/null | grep -v NXDOMAIN && found='yes'
+
+    if ! [[ $found ]]; then
+        echo "No IPMI DNS entry found for $hostname"
+        return 1
+    fi
 }
