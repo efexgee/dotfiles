@@ -8,6 +8,16 @@ case $- in
       *) return;;
 esac
 
+#FXG Aliases
+if [ -f $HOME/.alias ]; then
+    source $HOME/.alias
+fi
+
+#FXG Functions
+if [ -f $HOME/.function ]; then
+    source $HOME/.function
+fi
+
 # UIDs and GIDs
 DEFAULT_GROUP="Domain Users" # IHME default group
 INFR_GROUP="ihme-infr"       # my normal effective group
@@ -162,16 +172,6 @@ if [ -x /usr/bin/dircolors ]; then
     alias grep='grep --color=auto'
     alias fgrep='fgrep --color=auto'
     alias egrep='egrep --color=auto'
-fi
-
-#FXG Aliases
-if [ -f $HOME/.alias ]; then
-    source $HOME/.alias
-fi
-
-#FXG Functions
-if [ -f $HOME/.function ]; then
-    source $HOME/.function
 fi
 
 alias h='history'

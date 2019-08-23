@@ -1,9 +1,4 @@
-Host cluster-*
-	ForwardAgent yes
-Host cn*
-	ForwardAgent yes
-	StrictHostKeyChecking no
-Host c2-*
+Host *-uge-*
 	ForwardAgent yes
 	StrictHostKeyChecking no
 Host github.com
