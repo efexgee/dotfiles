@@ -51,9 +51,14 @@ alias screen-no-title-clobber='unset PROMPT_COMMAND'
 alias split='split --numeric-suffixes=01'
 alias lsblk='lsblk -o TYPE,NAME,KNAME,MAJ:MIN,MODEL,SIZE,ROTA'
 alias df='df -PT'
-alias grep='grep --color=auto -d skip'
+alias grep='grep --color=auto -d skip -I'
 alias mv='mv --no-clobber'
 alias last='last -daFx'
+
+# alternative commands
+if which colordiff > /dev/null 2>&1; then
+    alias diff='colordiff'
+fi
 
 ###### TEMPORARY
 alias shake_salt='sudo service salt-minion stop && pgrep salt || sudo service salt-minion start'

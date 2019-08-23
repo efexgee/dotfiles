@@ -12,6 +12,8 @@ PATH="/ihme/geospatial/tools/bin:$PATH"
 
 export PATH
 
+export CDPATH=".:$HOME/repos/:$HOME/"
+
 if [ -f $HOME/.bash_login ]; then
     . $HOME/.bash_login
 fi
