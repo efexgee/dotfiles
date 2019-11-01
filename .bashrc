@@ -19,31 +19,25 @@ if [ -f $HOME/.function ]; then
 fi
 
 # UIDs and GIDs
-DEFAULT_GROUP="Domain Users" # IHME default group
-INFR_GROUP="ihme-infr"       # my normal effective group
-ADMIN_UID=700718             # my admin account
-ADMIN_GROUP="IHME-SA"        # admin account effective group
-
-# Determine which effective group to use
-effective_group="$INFR_GROUP"
-if (( `id -u` == $ADMIN_UID )); then
-    effective_group="$ADMIN_GROUP"
-fi
+DEFAULT_GROUP="Domain Users"	# IHME default group
+EFFECTIVE_GROUP="ihme-malaria"	# my normal effective group
+ADMIN_UID=700718		# my admin account
 
 # try to set effective group
 # don't overwrite effective group if already newgrp'd to something else
 if [[ `id -gn` = $DEFAULT_GROUP ]]; then
-    exec newgrp $effective_group
-else
-    #TODO turns out that I never look at this
-    #echo "Accepting existing non-default group"
-    : #shell no-op
+    # check whether we're in the group we want to change to
+    if [[ $(id) =~ "($EFFECTIVE_GROUP)" ]]; then
+        exec newgrp $EFFECTIVE_GROUP
+    else
+        echo "User is not a member of group: $EFFECTIVE_GROUP"
+    fi
 fi
 
 # print my umask and effective group
 whatami
 
-# source /etc/bashrc before interactive check for ssh -t cluster-dev qlogin
+# source global bashrc
 if [ -f /etc/bashrc ]; then
     . /etc/bashrc
 fi
