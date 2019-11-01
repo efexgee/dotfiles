@@ -6,6 +6,8 @@
 alias sanity="sudo $HOME/scripts/cluster-tools/sanity_check.sh"
 alias up_node='qmod -e "*@`hostname -s`"'
 
+alias h='history'
+
 alias fill='cut -c1-`tput cols`'
 alias fun='typeset -f'
 alias tail1='tail -q -n 1'
