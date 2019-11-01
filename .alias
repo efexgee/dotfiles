@@ -25,6 +25,9 @@ alias cdf='df -PhT -x devtmpfs -x tmpfs | sort -nk6 | uniq -s 44 -w 27'
 # Elder Backslash!
 alias de-PHP='tr -s "\\\\" | sed "s#\\\n#\\n#g; s#\\\/#/#g; s#\\\\\"#\\\"#g" | egrep -e $ -e "([]:(){}\","'\\\''"[]|->)"'
 
+alias whusers='ps h -e -o user | egrep -xv "(root|rpc|rpcuser|postfix|123|dbus|sensu|systemd-.*|telegraf|sge|sshd|chrony|polkitd)" | egrep -xvf <(getent group IHME-INFR | cut -d: -f4 | tr "," "\n") | sort -u'
+alias what_is_mounted='df -PhT -x devtmpfs -x tmpfs -x ext2 -x ext4 | tail -n +2 | sort -k7 | egrep -e $ -e "(cvfs| /(share|snfs1|ihme/limited_use|opt).*)"'
+
 #create a tombstoning directory for staged deletions
 alias tombstone='sudo mkdir TO_BE_DELETED && sudo chgrp IHME-SA TO_BE_DELETED && sudo touch TO_BE_DELETED/timestamp.`date +"%s"`'
 
