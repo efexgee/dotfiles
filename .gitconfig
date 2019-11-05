@@ -1,10 +1,9 @@
 [user]
-    email = falko@uw.edu
+    email = falko+github@uw.edu
     name = Falko Goettsch
 [push]
     default = simple
 [core]
-    editor = vim
     excludesfile = /home/falko/.dotfiles/.gitignore
     filemode = true
     eol = lf
@@ -17,3 +16,8 @@
     cob = checkout -b
     b = branch
     m = checkout master
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
