@@ -5,7 +5,7 @@
     default = simple
 [core]
     editor = vim
-    excludesfile = /home/falko/.dotfiles/.gitignore
+    excludesfile = /home/falko/repos/dotfiles/.gitignore
     filemode = true
 [color]
     ui = auto
@@ -13,3 +13,4 @@
     co = checkout
     b = branch
     m = checkout master
+    rv = remote -v

@@ -26,9 +26,9 @@ alias de-PHP='tr -s "\\\\" | sed "s#\\\n#\\n#g; s#\\\/#/#g; s#\\\\\"#\\\"#g" | e
 alias tombstone='sudo mkdir TO_BE_DELETED && sudo chgrp IHME-SA TO_BE_DELETED && sudo touch TO_BE_DELETED/timestamp.`date +"%s"`'
 
 # Conda
-alias py2='source activate py2'
-alias py3="source activate py3"
-alias deconda='source deactivate'
+alias py2='conda activate python2'
+alias py3='conda activate python3'
+alias deconda='conda deactivate'
 
 # screen
 alias name-window-dir='screen -X title "$(printf "%2s - %s" `basename \`tty\`` `basename \`pwd\``)"'
