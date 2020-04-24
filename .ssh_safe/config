@@ -1,9 +1,15 @@
 Host *-uge-*
 	ForwardAgent yes
 	StrictHostKeyChecking no
+# for personal GH
 Host github.com
 	IdentityFile /homes/falko/.ssh/github.ihme.ssh
 	User git
+# for DD-HARP
+Host github.com
+	IdentityFile /homes/falko/.ssh/ihme-to-github.falko.goettsch
+	User git
+# IHME Bitbucket
 Host stash.ihme.washington.edu
 	IdentityFile /homes/falko/.ssh/ihme.bitbucket.ssh
 	User git

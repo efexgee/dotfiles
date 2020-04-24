@@ -30,7 +30,7 @@ if [[ `id -gn` = $DEFAULT_GROUP ]]; then
     if [[ $(id) =~ "($EFFECTIVE_GROUP)" ]]; then
         exec newgrp $EFFECTIVE_GROUP
     else
-        echo "User is not a member of group: $EFFECTIVE_GROUP"
+        echo "User is not a member of group: $EFFECTIVE_GROUP" | grep .
     fi
 fi
 
