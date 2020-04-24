@@ -52,3 +52,6 @@ alias last='last -daFx'
 if which colordiff > /dev/null 2>&1; then
     alias diff='colordiff'
 fi
+
+# coding
+alias TODO='grep -H . TODO 2>/dev/null; grep --color=always -n -R TODO * | sed "s# *// *# //#" 2>/dev/null'

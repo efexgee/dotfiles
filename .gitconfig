@@ -9,6 +9,9 @@
     eol = lf
 [github]
     token = REDACTED
+    editor = vim
+    excludesfile = /home/falko/.dotfiles/.gitignore
+    filemode = true
 [color]
     ui = auto
 [alias]

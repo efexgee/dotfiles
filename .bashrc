@@ -42,6 +42,11 @@ if [ -f /etc/bashrc ]; then
     . /etc/bashrc
 fi
 
+# source computer-specific dotfiles
+if [ -f $HOME/.viserc ]; then
+    . $HOME/.viserc
+fi
+
 # use vim
 export EDITOR=vim
 export VISUAL=vim
