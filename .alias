@@ -1,7 +1,3 @@
-#migration
-alias bfsplit='qfsplit --host blah-fs --credentials-store ~/.qfsd_cred.blah-fs'
-alias ex-sync='rsync_maker.py blah-fs chagas-fs --delete -x excludes'
-
 #
 # General
 #
@@ -20,6 +16,8 @@ alias h_stamp='date +"%D %T"'
 
 alias short_prompt="export PS1='\[\e[91m\]\n\T\[\e[33m\]\w\[\e[91m\]#\[\e[0m\]'"
 
+alias h="history"
+
 # make PHP logs sane
 # Elder Backslash!
 alias de-PHP='tr -s "\\\\" | sed "s#\\\n#\\n#g; s#\\\/#/#g; s#\\\\\"#\\\"#g" | egrep -e $ -e "([]:(){}\","'\\\''"[]|->)"'
@@ -28,9 +26,9 @@ alias de-PHP='tr -s "\\\\" | sed "s#\\\n#\\n#g; s#\\\/#/#g; s#\\\\\"#\\\"#g" | e
 alias tombstone='sudo mkdir TO_BE_DELETED && sudo chgrp IHME-SA TO_BE_DELETED && sudo touch TO_BE_DELETED/timestamp.`date +"%s"`'
 
 # Conda
-alias py2='source activate py2'
-alias py3="source activate py3"
-alias deconda='source deactivate'
+alias py2='conda activate python2'
+alias py3='conda activate python3'
+alias deconda='conda deactivate'
 
 # screen
 alias name-window-dir='screen -X title "$(printf "%2s - %s" `basename \`tty\`` `basename \`pwd\``)"'
