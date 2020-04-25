@@ -1,0 +1,35 @@
+# IHME cluster hosts
+Host *-uge-*
+	ForwardAgent yes
+	StrictHostKeyChecking no
+
+# git ssh keys
+
+# IHME Bitbucket
+Host stash.ihme.washington.edu
+	IdentityFile /homes/falko/.ssh/ihme-to-bitbucket.falko
+	User git
+
+# DD-HARP from IHME
+Host github-ihme-falkogoettsch
+    HostName github.com
+	    IdentityFile /homes/falko/.ssh/ihme-to-github.falkogoettsch
+        User git
+
+# personal from IHME
+Host github-ihme-efexgee
+    HostName github.com
+        IdentityFile /homes/falko/.ssh/ihme-to-github.efexgee
+        User git
+
+# DD-HARP from VM
+Host github-falkogoettsch
+    HostName github.com
+        IdentityFile /home/falko/.ssh/proboscis-to-gh.falkogoettsch
+        User git
+
+# personal from VM
+Host github-efexgee
+    HostName github.com
+        IdentityFile /home/falko/.ssh/proboscis-to-gh.efexgee
+        User git
