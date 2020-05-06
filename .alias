@@ -1,10 +1,7 @@
 #
 # General
 #
-#TODO sanity_check is not installed currently, using a local copy
-#alias sanity='sudo /usr/local/bin/sanity_check.sh'
-alias sanity="sudo $HOME/scripts/cluster-tools/sanity_check.sh"
-alias up_node='qmod -e "*@`hostname -s`"'
+alias h='history'
 
 alias fill='cut -c1-`tput cols`'
 alias fun='typeset -f'
@@ -18,9 +15,15 @@ alias short_prompt="export PS1='\[\e[91m\]\n\T\[\e[33m\]\w\[\e[91m\]#\[\e[0m\]'"
 
 alias h="history"
 
-# make PHP logs sane
-# Elder Backslash!
+alias hl='egrep -e $ -e'
+
+# make PHP logs sane (Elder Backslash!)
 alias de-PHP='tr -s "\\\\" | sed "s#\\\n#\\n#g; s#\\\/#/#g; s#\\\\\"#\\\"#g" | egrep -e $ -e "([]:(){}\","'\\\''"[]|->)"'
+
+# cluster-ish commands
+alias cdf='df -PhT -x devtmpfs -x tmpfs | sort -nk6 | uniq -s 44 -w 27'
+alias whusers='ps h -e -o user | egrep -xv "(root|rpc|rpcuser|postfix|123|dbus|sensu|systemd-.*|telegraf|sge|sshd|chrony|polkitd)" | egrep -xvf <(getent group IHME-INFR | cut -d: -f4 | tr "," "\n") | sort -u'
+alias what_is_mounted='df -PhT -x devtmpfs -x tmpfs -x ext2 -x ext4 | tail -n +2 | sort -k7 | egrep -e $ -e "(cvfs| /(share|snfs1|ihme/limited_use|opt).*)"'
 
 #create a tombstoning directory for staged deletions
 alias tombstone='sudo mkdir TO_BE_DELETED && sudo chgrp IHME-SA TO_BE_DELETED && sudo touch TO_BE_DELETED/timestamp.`date +"%s"`'
@@ -30,22 +33,30 @@ alias py2='conda activate python2'
 alias py3='conda activate python3'
 alias deconda='conda deactivate'
 
+#TODO What's the sane way to deal with 'activate' path?
+CONDA_CMDS_PATH='/share/local/anaconda-2.2/bin'
+alias py2="source ${CONDA_CMDS_PATH}/activate py2"
+alias py3="source ${CONDA_CMDS_PATH}/activate py3"
+alias deconda="source ${CONDA_CMDS_PATH}/deactivate"
+
 # screen
 alias name-window-dir='screen -X title "$(printf "%2s - %s" `basename \`tty\`` `basename \`pwd\``)"'
-#alias name-window-host='screen -X title "$(printf "%2s - %s" `basename \`tty\`` `hostname -s`)"'
+alias scrname='screen -X title'
+unset PROMPT_COMMAND
+alias screen-no-title-clobber='unset PROMPT_COMMAND'
 
 # default command flags
 alias split='split --numeric-suffixes=01'
 alias lsblk='lsblk -o TYPE,NAME,KNAME,MAJ:MIN,MODEL,SIZE,ROTA'
 alias df='df -PT'
-alias grep='grep --color=auto -d skip'
+alias grep='grep --color=auto -d skip -I'
 alias mv='mv --no-clobber'
+alias last='last -daFx'
+
+# alternative commands
+if which colordiff > /dev/null 2>&1; then
+    alias diff='colordiff'
+fi
 
 # coding
 alias TODO='grep -H . TODO 2>/dev/null; grep --color=always -n -R TODO * | sed "s# *// *# //#" 2>/dev/null'
-
-###### TEMPORARY
-#alias w='hostname -s >> rebooting.log'
-alias psusers='ps h -N -f -u root -u $(id -u) -u sgeadmin -u postfix -u haldaemon -u dbus -u rpcuser -u rpc -u ntp | egrep -w -v "(lldpd|sensu)" | sort | fill'
-alias shake_salt='sudo service salt-minion stop && pgrep salt || sudo service salt-minion start'
-alias splain='qexplain | grep -A1 `hostname -s`'

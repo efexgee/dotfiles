@@ -8,34 +8,36 @@ case $- in
       *) return;;
 esac
 
-# UIDs and GIDs
-DEFAULT_GROUP="Domain Users" # IHME default group
-INFR_GROUP="ihme-infr"       # my normal effective group
-ADMIN_UID=700718             # my admin account
-ADMIN_GROUP="IHME-SA"        # admin account effective group
-
-# Determine which effective group to use
-effective_group="$INFR_GROUP"
-if (( `id -u` == $ADMIN_UID )); then
-    effective_group="$ADMIN_GROUP"
+#FXG Aliases
+if [ -f $HOME/.alias ]; then
+    source $HOME/.alias
 fi
+
+#FXG Functions
+if [ -f $HOME/.function ]; then
+    source $HOME/.function
+fi
+
+# UIDs and GIDs
+DEFAULT_GROUP="Domain Users"	# IHME default group
+EFFECTIVE_GROUP="ihme-malaria"	# my normal effective group
+ADMIN_UID=700718		# my admin account
 
 # try to set effective group
 # don't overwrite effective group if already newgrp'd to something else
 if [[ `id -gn` = $DEFAULT_GROUP ]]; then
-    exec newgrp $effective_group
-else
-    echo "Accepting existing non-default group"
+    # check whether we're in the group we want to change to
+    if [[ $(id) =~ "($EFFECTIVE_GROUP)" ]]; then
+        exec newgrp $EFFECTIVE_GROUP
+    else
+        echo "User is not a member of group: $EFFECTIVE_GROUP" | grep .
+    fi
 fi
 
-# Who/what am I
-default_perms=$(umask -S | sed 's/[ugo]=\(r*\)\(w*\)\(x*\)/@\1@#\2#%\3%/g' | sed 's/\(.\)\1/-/g' | tr -d  ',@#%')
-effective_group=$(id -gn)
-echo
-echo "$default_perms $USER:$effective_group"
-echo
+# print my umask and effective group
+whatami
 
-# source /etc/bashrc before interactive check for ssh -t cluster-dev qlogin
+# source global bashrc
 if [ -f /etc/bashrc ]; then
     . /etc/bashrc
 fi
@@ -46,7 +48,11 @@ if [ -f $HOME/.viserc ]; then
 fi
 
 # use vim
+export EDITOR=vim
 export VISUAL=vim
+
+# disabled some shellcheck warnings
+export SHELLCHECK_OPTS='-e SC2196 -e SC1090 -e SC1091'
 
 # Use bash-completion, if available
 [[ $PS1 && -f /usr/share/bash-completion/bash_completion ]] && \
@@ -133,7 +139,8 @@ if [ "$color_prompt" = yes ]; then
     if (( $(id -u) == 0 || $(id -u) == $ADMIN_UID )); then
         #"root" prompt colors username red and replaces $ with a red #
         PS1='\n\T \[\e[91m\]\u\[\e[32m\]@\h:\[\e[33m\]\w\[\e[91m\]#\[\e[0m\] '
-        echo "Remember: \"With root power comes root responsibility.\""
+        #this is printing too often because we use sadm_* everywhere
+        #echo "Remember: \"With root power comes root responsibility.\""
     else
         PS1='\n\T \[\e[32m\]\u@\h:\[\e[33m\]\w\[\e[0m\]\$ '
     fi
@@ -166,18 +173,6 @@ if [ -x /usr/bin/dircolors ]; then
     alias egrep='egrep --color=auto'
 fi
 
-#FXG Aliases
-if [ -f $HOME/.alias ]; then
-    source $HOME/.alias
-fi
-
-#FXG Functions
-if [ -f $HOME/.function ]; then
-    source $HOME/.function
-fi
-
-alias h='history'
-
 #FXG: Set color for grep output
 #FXG: mc=yellow, should never show (tells you you did something weird)
 #FXG: fn=white, make filenames less garish
@@ -196,23 +191,9 @@ export GREP_COLORS='ms=01;31:mc=33:sl=:cx=:fn=01;37:ln=32:bn=35:se=36'
 # colored GCC warnings and errors
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
-# some more ls aliases
-#alias ll='ls -alF'
-#alias la='ls -A'
-#alias l='ls -CF'
-
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
-
-# Alias definitions.
-# You may want to put all your additions into a separate file like
-# ~/.bash_aliases, instead of adding them here directly.
-# See /usr/share/doc/bash-doc/examples in the bash-doc package.
-
-if [ -f $HOME/.bash_aliases ]; then
-    . $HOME/.bash_aliases
-fi
 
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
@@ -226,8 +207,9 @@ if ! shopt -oq posix; then
 fi
 
 # only on the desktop VM
-if [ -d $HOME/pass ]; then
-    export PASSWORD_STORE_DIR=$HOME/pass
+PASS_DIR=$HOME/repos/pass
+if [ -d $PASS_DIR ]; then
+    export PASSWORD_STORE_DIR=$PASS_DIR
 fi
 
 # added by Miniconda3 4.3.11 installer
@@ -235,7 +217,7 @@ if [ -d $HOME/bin/miniconda3/bin ]; then
     export PATH="/home/falko/bin/miniconda3/bin:$PATH"
 fi
 
-# source functions and aliases from other files
+# source other files
 SOURCE_FILES="$HOME/.dotfiles"
 for dotfile in .cluster_src .qumulo_src .salt_src .stornext_src .rsync_src .reporting_src; do
     file="${SOURCE_FILES}/${dotfile}"
@@ -243,3 +225,6 @@ for dotfile in .cluster_src .qumulo_src .salt_src .stornext_src .rsync_src .repo
         . $file
     fi
 done
+
+# check for screen sessions
+screen -ls | grep $'^\t' | sed 's/^\t//'

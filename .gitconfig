@@ -7,10 +7,19 @@
     editor = vim
     excludesfile = /home/falko/repos/dotfiles/.gitignore
     filemode = true
+    eol = lf
+[github]
+    token = REDACTED
 [color]
     ui = auto
 [alias]
     co = checkout
+    cob = checkout -b
     b = branch
     m = checkout master
     rv = remote -v
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
