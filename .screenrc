@@ -19,4 +19,4 @@ termcapinfo xterm* ti@:te@
 
 # Tell screen which TERM to set to avoid unknown terminal error
 # on the remote host when ssh'ing
-term screen
+term screen-256color
