@@ -1,5 +1,7 @@
 # .bash_profile
 
+echo "Sourcing $BASH_SOURCE"
+
 # Get the aliases and functions
 if [ -f $HOME/.bashrc ]; then
 	. $HOME/.bashrc
@@ -14,6 +16,13 @@ export PATH
 
 export CDPATH=".:$HOME/repos/:$HOME/"
 
+# Reading .bash_login and .profile is unexpected behavior
+# for bash when .bash_profile exists.
+# TODO This should be fixed
 if [ -f $HOME/.bash_login ]; then
     . $HOME/.bash_login
+fi
+
+if [ -f $HOME/.profile ]; then
+    . $HOME/.profile
 fi

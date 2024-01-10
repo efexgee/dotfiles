@@ -8,19 +8,19 @@
 # for ssh logins, install and configure the libpam-umask package.
 #umask 022
 
-# if running bash
-if [ -n "$BASH_VERSION" ]; then
-    # include .bashrc if it exists
-    if [ -f "$HOME/.bashrc" ]; then
-	. "$HOME/.bashrc"
-    fi
-    # include .bash_profile if it exists
-    if [ -f "$HOME/.bash_profile" ]; then
-	. "$HOME/.bash_profile"
-    fi
-fi
+echo "Sourcing $BASH_SOURCE"
 
 # set PATH so it includes user's private bin if it exists
 if [ -d "$HOME/bin" ] ; then
     PATH="$HOME/bin:$PATH"
+fi
+
+if [ -d "$HOME/.local/bin" ] ; then
+    PATH="$HOME/.local/bin:$PATH"
+fi
+
+# rustup shell setup
+# (I don't know what this does, or whether it's needed)
+if [ -f "$HOME/.cargo/env" ]; then
+    . "$HOME/.cargo/env"
 fi
