@@ -1,3 +1,5 @@
+echo "Sourcing $BASH_SOURCE"
+
 #
 # General
 #
@@ -52,6 +54,7 @@ alias df='df -PT'
 alias grep='grep --color=auto -d skip -I'
 alias mv='mv --no-clobber'
 alias last='last -daFx'
+alias less='less -F'
 
 # alternative commands
 if which colordiff > /dev/null 2>&1; then
@@ -59,4 +62,5 @@ if which colordiff > /dev/null 2>&1; then
 fi
 
 # coding
+alias python=python3
 alias TODO='grep -H . TODO 2>/dev/null; grep --color=always -n -R TODO * | sed "s# *// *# //#" 2>/dev/null'
